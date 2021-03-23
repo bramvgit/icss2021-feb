@@ -15,7 +15,15 @@ public interface IHANStack<T> {
 
     /**
      * Peeks at the top of the stack. Does not remove anything
+     *
      * @return value at the top of the stack
      */
     T peek();
+
+    /**
+     * Get size of the stack.
+     *
+     * @return size
+     */
+    int size();
 }
