@@ -43,7 +43,18 @@ variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR (TRUE | FALSE | value | ca
 declaration: property COLON (value | variableReference) SEMICOLON;
 property: LOWER_IDENT;
 value: PIXELSIZE | PERCENTAGE | COLOR;
-variableReference: CAPITAL_IDENT;
+
+/*
+    Calculations inside stylerule
+    TODO: fix bug: width: Bool +;
+*/
+variableReference
+    : CAPITAL_IDENT
+    | CAPITAL_IDENT PLUS
+    | variableReference variableCalculation
+    ;
+
+variableCalculation: calculation;
 
 /*
     Calculations for pixels and percentages
