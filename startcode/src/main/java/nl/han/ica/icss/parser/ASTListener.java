@@ -107,8 +107,6 @@ public class ASTListener extends ICSSBaseListener {
             valueLiteral = new PercentageLiteral(value);
         } else if (value.startsWith("#")) {
             valueLiteral = new ColorLiteral(value);
-        } else if (isScalar(value)) {
-            valueLiteral = new ScalarLiteral(value);
         }
         return valueLiteral;
     }

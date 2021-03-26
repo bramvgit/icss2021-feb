@@ -42,5 +42,5 @@ block: selector OPEN_BRACE declaration * CLOSE_BRACE;
 variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR (TRUE | FALSE | value) SEMICOLON;
 declaration: property COLON (value | variableReference) SEMICOLON;
 property: LOWER_IDENT;
-value: PIXELSIZE | PERCENTAGE | SCALAR | COLOR;
+value: PIXELSIZE | PERCENTAGE | COLOR;
 variableReference: CAPITAL_IDENT;
