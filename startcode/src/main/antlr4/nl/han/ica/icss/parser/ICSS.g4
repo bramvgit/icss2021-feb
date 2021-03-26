@@ -35,11 +35,12 @@ MUL: '*';
 ASSIGNMENT_OPERATOR: ':=';
 
 //--- PARSER: ---
-stylesheet: (block) * ;
+stylesheet: (variableAssignment | block) * EOF;
 
 selector: LOWER_IDENT | ID_IDENT | CLASS_IDENT;
-block: selector OPEN_BRACE (declaration) * CLOSE_BRACE;
-declaration: property COLON value SEMICOLON;
+block: selector OPEN_BRACE declaration * CLOSE_BRACE;
+variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR (TRUE | FALSE | value) SEMICOLON;
+declaration: property COLON (value | variableReference) SEMICOLON;
 property: LOWER_IDENT;
-value: TRUE | FALSE | PIXELSIZE | PERCENTAGE | SCALAR | COLOR;
-
+value: PIXELSIZE | PERCENTAGE | SCALAR | COLOR;
+variableReference: CAPITAL_IDENT;

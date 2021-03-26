@@ -11,6 +11,8 @@ import nl.han.ica.icss.ast.selectors.TagSelector;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class extracts the ICSS Abstract Syntax Tree from the Antlr Parse tree.
@@ -23,19 +25,51 @@ public class ASTListener extends ICSSBaseListener {
     //Use this to keep track of the parent nodes when recursively traversing the ast
     private IHANStack<ASTNode> currentContainer;
 
+    // Use to keep track of key values for variables
+    Map<String, VariableReference> variables;
+
     public ASTListener() {
         ast = new AST();
         currentContainer = new HANStack<>(10);
+        variables = new HashMap<>();
     }
 
     @Override
     public void exitStylesheet(ICSSParser.StylesheetContext ctx) {
         ctx.children.forEach(child -> {
-            if (isBlock(child)) {
+            if (child.getChildCount() == 4) {
+                if (child.getChild(1).getText().equalsIgnoreCase(":=")) {
+                    String name = child.getChild(0).getText();
+                    String value = child.getChild(2).getText();
+                    Literal valueLiteral = null;
+
+                    if (value.endsWith("px")) {
+                        valueLiteral = new PixelLiteral(value);
+                    } else if (value.endsWith("%")) {
+                        valueLiteral = new PercentageLiteral(value);
+                    } else if (value.startsWith("#")) {
+                        valueLiteral = new ColorLiteral(value);
+                    } else if (isScalar(value)) {
+                        valueLiteral = new ScalarLiteral(value);
+                    } else if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+                        valueLiteral = new BoolLiteral(value);
+                    }
+
+                    VariableAssignment assignment = new VariableAssignment();
+                    assignment.name = new VariableReference(name);
+                    assignment.expression = valueLiteral;
+
+                    variables.put(name, assignment.name);
+                    currentContainer.push(assignment);
+                }
+            }
+            if (isStyleRule(child)) {
                 addSelector(child);
                 addDeclarations(child);
             }
-            ast.root.addChild(currentContainer.pop());
+            if (currentContainer.size() > 0) {
+                ast.root.addChild(currentContainer.pop());
+            }
         });
     }
 
@@ -52,29 +86,31 @@ public class ASTListener extends ICSSBaseListener {
                     // Get properties
                     String property = declaration.getChild(0).getText();
                     String value = declaration.getChild(2).getText();
-                    Literal valueLiteral;
-
-                    // Get values (color, pixel, literal, etc)
-                    if (value.equalsIgnoreCase("true")) {
-                        valueLiteral = new BoolLiteral(true);
-                    } else if (value.equalsIgnoreCase("false")) {
-                        valueLiteral = new BoolLiteral(false);
-                    } else if (value.endsWith("px")) {
-                        valueLiteral = new PixelLiteral(value);
-                    } else if (value.endsWith("%")) {
-                        valueLiteral = new PercentageLiteral(value);
-                    } else if (value.startsWith("#")) {
-                        valueLiteral = new ColorLiteral(value);
-                    } else {
-                        valueLiteral = new ScalarLiteral(value);
-                    }
+                    Literal valueLiteral = getLiteral(value);
 
                     // Make new declaration with everything above
-                    declarations.add(new Declaration(property).addChild(valueLiteral));
+                    if (valueLiteral != null) declarations.add(new Declaration(property).addChild(valueLiteral));
+                    else declarations.add(new Declaration(property).addChild(variables.get(value)));
                 }
             }
         }
         currentContainer.push(new Stylerule((Selector) currentContainer.pop(), declarations));
+    }
+
+    private Literal getLiteral(String value) {
+        Literal valueLiteral = null;
+
+        // Get values (color, pixel, literal, etc)
+        if (value.endsWith("px")) {
+            valueLiteral = new PixelLiteral(value);
+        } else if (value.endsWith("%")) {
+            valueLiteral = new PercentageLiteral(value);
+        } else if (value.startsWith("#")) {
+            valueLiteral = new ColorLiteral(value);
+        } else if (isScalar(value)) {
+            valueLiteral = new ScalarLiteral(value);
+        }
+        return valueLiteral;
     }
 
     private void addSelector(ParseTree child) {
@@ -92,8 +128,17 @@ public class ASTListener extends ICSSBaseListener {
         }
     }
 
-    private boolean isBlock(ParseTree child) {
-        return child.getChildCount() >= 4;
+    private boolean isStyleRule(ParseTree child) {
+        return child.getChildCount() >= 4 && !child.getChild(1).getText().equalsIgnoreCase(":=");
+    }
+
+    private boolean isScalar(String value) {
+        try {
+            Integer.parseInt(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     public AST getAST() {
