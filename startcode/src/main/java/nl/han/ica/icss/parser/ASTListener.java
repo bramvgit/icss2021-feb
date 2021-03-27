@@ -5,14 +5,15 @@ import nl.han.ica.datastructures.HANStack;
 import nl.han.ica.datastructures.IHANStack;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.*;
+import nl.han.ica.icss.ast.operations.AddOperation;
+import nl.han.ica.icss.ast.operations.MultiplyOperation;
+import nl.han.ica.icss.ast.operations.SubtractOperation;
 import nl.han.ica.icss.ast.selectors.ClassSelector;
 import nl.han.ica.icss.ast.selectors.IdSelector;
 import nl.han.ica.icss.ast.selectors.TagSelector;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class extracts the ICSS Abstract Syntax Tree from the Antlr Parse tree.
@@ -88,19 +89,69 @@ public class ASTListener extends ICSSBaseListener {
                     String value = declaration.getChild(2).getText();
                     Literal valueLiteral = getLiteral(value);
 
-                    // Make new declaration with everything above
-                    if (valueLiteral != null) declarations.add(new Declaration(property).addChild(valueLiteral));
-                    else declarations.add(new Declaration(property).addChild(variables.get(value)));
+                    if (Character.isUpperCase(value.charAt(0)) && declaration.getChild(2).getChildCount() > 1) {
+                        String operationStr = declaration.getChild(2).getChild(0).getChild(1).getText();
+                        ParseTree calculation = declaration.getChild(2).getChild(1).getChild(0).getChild(0);
+                        VariableReference variableReference = variables.get(declaration.getChild(2).getChild(0).getChild(0).getText());
+
+                        Operation operation = getOperation(operationStr);
+                        operation.addChild(variableReference);
+
+                        Queue<ASTNode> queue = new LinkedList<>();
+
+                        for (int j = 0; j < calculation.getChildCount(); j++) {
+                            String c = calculation.getChild(j).getText();
+
+                            if (c.equalsIgnoreCase("+") || c.equalsIgnoreCase("-") || c.equalsIgnoreCase("*")) {
+                                queue.add(getOperation(c));
+                            } else {
+                                queue.add(getLiteralWithScalar(c));
+                            }
+                        }
+
+                        Iterator<ASTNode> iterator = queue.iterator();
+                        while (iterator.hasNext()) {
+                            ASTNode astLiteral1 = iterator.next();
+                            ASTNode astOperation = iterator.next();
+                            ASTNode astLiteral2 = iterator.next();
+
+                            astOperation.addChild(astLiteral1);
+                            astOperation.addChild(astLiteral2);
+
+                            operation.addChild(astOperation);
+                        }
+
+                        declarations.add(new Declaration(property).addChild(operation));
+                    } else if (valueLiteral != null) {
+                        declarations.add(new Declaration(property).addChild(valueLiteral));
+                    } else {
+                        declarations.add(new Declaration(property).addChild(variables.get(value)));
+                    }
+
                 }
             }
         }
         currentContainer.push(new Stylerule((Selector) currentContainer.pop(), declarations));
     }
 
+    private Operation getOperation(String operationStr) {
+        switch (operationStr) {
+            case "+":
+                return new AddOperation();
+            case "-":
+                return new SubtractOperation();
+            default:
+                return new MultiplyOperation();
+        }
+    }
+
     private Literal getLiteral(String value) {
         Literal valueLiteral = null;
 
         // Get values (color, pixel, literal, etc)
+        if (Character.isUpperCase(value.charAt(0))) {
+            return valueLiteral;
+        }
         if (value.endsWith("px")) {
             valueLiteral = new PixelLiteral(value);
         } else if (value.endsWith("%")) {
@@ -108,8 +159,39 @@ public class ASTListener extends ICSSBaseListener {
         } else if (value.startsWith("#")) {
             valueLiteral = new ColorLiteral(value);
         }
+
         return valueLiteral;
     }
+
+    private Literal getLiteralWithScalar(String value) {
+        Literal valueLiteral = null;
+
+        // Get values (color, pixel, literal, etc)
+        if (Character.isUpperCase(value.charAt(0))) {
+            return valueLiteral;
+        }
+        if (value.endsWith("px")) {
+            valueLiteral = new PixelLiteral(value);
+        } else if (value.endsWith("%")) {
+            valueLiteral = new PercentageLiteral(value);
+        } else if (value.startsWith("#")) {
+            valueLiteral = new ColorLiteral(value);
+        } else if (isNumeric(value)) {
+            valueLiteral = new ScalarLiteral(value);
+        }
+
+        return valueLiteral;
+    }
+
+    private boolean isNumeric(String value) {
+        try {
+            Integer.parseInt(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
 
     private void addSelector(ParseTree child) {
         String selector = child.getChild(0).getText();
