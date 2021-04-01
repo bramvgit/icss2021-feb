@@ -13,7 +13,8 @@ import nl.han.ica.icss.ast.selectors.IdSelector;
 import nl.han.ica.icss.ast.selectors.TagSelector;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class extracts the ICSS Abstract Syntax Tree from the Antlr Parse tree.
@@ -37,101 +38,127 @@ public class ASTListener extends ICSSBaseListener {
 
     @Override
     public void exitStylesheet(ICSSParser.StylesheetContext ctx) {
-        ctx.children.forEach(child -> {
-            if (child.getChildCount() == 4) {
-                if (child.getChild(1).getText().equalsIgnoreCase(":=")) {
-                    String name = child.getChild(0).getText();
-                    String value = child.getChild(2).getText();
-                    Literal valueLiteral = null;
+        ParseTree child = getStyleRule(ctx);
 
-                    if (value.endsWith("px")) {
-                        valueLiteral = new PixelLiteral(value);
-                    } else if (value.endsWith("%")) {
-                        valueLiteral = new PercentageLiteral(value);
-                    } else if (value.startsWith("#")) {
-                        valueLiteral = new ColorLiteral(value);
-                    } else if (isScalar(value)) {
-                        valueLiteral = new ScalarLiteral(value);
-                    } else if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
-                        valueLiteral = new BoolLiteral(value);
-                    }
+        if (isVariableAssignment(child)) {
+            addVariableAssignment(child);
+        } else {
+            // Style rule
+            String selector = child.getChild(0).getText();
 
-                    VariableAssignment assignment = new VariableAssignment();
-                    assignment.name = new VariableReference(name);
-                    assignment.expression = valueLiteral;
+            addStyleRule();
+            addSelector(selector);
+            addDeclarations(child);
+        }
 
-                    variables.put(name, assignment.name);
-                    currentContainer.push(assignment);
-                }
-            }
-            if (isStyleRule(child)) {
-                addSelector(child);
-                addDeclarations(child);
-            }
-            if (currentContainer.size() > 0) {
-                ast.root.addChild(currentContainer.pop());
-            }
-        });
+        if (currentContainer.size() > 0) {
+            ast.root.addChild(currentContainer.pop());
+        }
+    }
+
+    private void addStyleRule() {
+        currentContainer.push(new Stylerule());
+    }
+
+    private void addVariableAssignment(ParseTree child) {
+        VariableAssignment variableAssignment = getVariableAssignment(child);
+
+        currentContainer.push(variableAssignment);
+        variables.put(variableAssignment.name.name, variableAssignment.name);
+    }
+
+    private ParseTree getStyleRule(ICSSParser.StylesheetContext ctx) {
+        if (ctx.getChildCount() > 1) {
+            return ctx.getChild(1);
+        }
+        return ctx.getChild(0);
+    }
+
+    private boolean isVariableAssignment(ParseTree child) {
+        String assignment = child.getChild(1).getText();
+        VariableAssignment variableAssignment = getVariableAssignment(child);
+
+        return Character.isUpperCase(variableAssignment.name.name.charAt(0)) && assignment.equalsIgnoreCase(":=");
+    }
+
+    private VariableAssignment getVariableAssignment(ParseTree child) {
+        String name = child.getChild(0).getText();
+        String value = child.getChild(2).getText();
+
+        VariableAssignment variableAssignment = new VariableAssignment();
+        variableAssignment.addChild(new VariableReference(name));
+        variableAssignment.addChild(getLiteral(value));
+
+        return variableAssignment;
     }
 
     private void addDeclarations(ParseTree child) {
-        ArrayList<ASTNode> declarations = new ArrayList<>();
+        for (int i = 2; i < child.getChildCount() - 1; i++) {
+            String property = child.getChild(i).getChild(0).getText();
+            ParseTree value = child.getChild(i).getChild(2);
 
-        // Declarations start at index 2
-        for (int i = 2; i < child.getChildCount(); i++) {
-            ParseTree declaration = child.getChild(i);
+            addDeclaration(property);
 
-            // If not end of declarations
-            if (!declaration.getText().equals("}")) {
-                if (declaration.getChildCount() == 4) {
-                    // Get properties
-                    String property = declaration.getChild(0).getText();
-                    String value = declaration.getChild(2).getText();
-                    Literal valueLiteral = getLiteral(value);
-
-                    if (Character.isUpperCase(value.charAt(0)) && declaration.getChild(2).getChildCount() > 1) {
-                        String operationStr = declaration.getChild(2).getChild(0).getChild(1).getText();
-                        ParseTree calculation = declaration.getChild(2).getChild(1).getChild(0).getChild(0);
-                        VariableReference variableReference = variables.get(declaration.getChild(2).getChild(0).getChild(0).getText());
-
-                        Operation operation = getOperation(operationStr);
-                        operation.addChild(variableReference);
-
-                        Queue<ASTNode> queue = new LinkedList<>();
-
-                        for (int j = 0; j < calculation.getChildCount(); j++) {
-                            String c = calculation.getChild(j).getText();
-
-                            if (c.equalsIgnoreCase("+") || c.equalsIgnoreCase("-") || c.equalsIgnoreCase("*")) {
-                                queue.add(getOperation(c));
-                            } else {
-                                queue.add(getLiteralWithScalar(c));
-                            }
-                        }
-
-                        Iterator<ASTNode> iterator = queue.iterator();
-                        while (iterator.hasNext()) {
-                            ASTNode astLiteral1 = iterator.next();
-                            ASTNode astOperation = iterator.next();
-                            ASTNode astLiteral2 = iterator.next();
-
-                            astOperation.addChild(astLiteral1);
-                            astOperation.addChild(astLiteral2);
-
-                            operation.addChild(astOperation);
-                        }
-
-                        declarations.add(new Declaration(property).addChild(operation));
-                    } else if (valueLiteral != null) {
-                        declarations.add(new Declaration(property).addChild(valueLiteral));
-                    } else {
-                        declarations.add(new Declaration(property).addChild(variables.get(value)));
-                    }
-
+            if (!isCalculation(value)) {
+                if (isVariableReference(value)) {
+                    addVariableReference(value);
+                } else {
+                    addLiteral(value);
                 }
+            } else {
+                ParseTree variable = value.getChild(0);
+                ParseTree operator = value.getChild(1);
+                ParseTree calculation = value.getChild(2);
+
+                Operation operation = getOperation(operator.getText());
+
+                currentContainer.push(currentContainer.pop()
+                        .addChild(new Declaration(property)
+                                .addChild(
+                                        operation
+                                )
+                        )
+                );
             }
+            mergeDeclaration();
         }
-        currentContainer.push(new Stylerule((Selector) currentContainer.pop(), declarations));
+    }
+
+    private void mergeDeclaration() {
+        ASTNode declaration = currentContainer.pop();
+        currentContainer.push(
+                currentContainer.pop().addChild(declaration)
+        );
+    }
+
+    private boolean isCalculation(ParseTree value) {
+        return value.getChildCount() == 3;
+    }
+
+    private void addLiteral(ParseTree value) {
+        currentContainer.push(currentContainer.pop()
+                .addChild(
+                        getLiteral(value.getText())
+                )
+        );
+    }
+
+    private void addDeclaration(String property) {
+        currentContainer.push(new Declaration(property));
+    }
+
+    private void addVariableReference(ParseTree value) {
+        currentContainer.push(currentContainer.pop()
+                .addChild(
+                        variables.get(
+                                value.getText()
+                        )
+                )
+        );
+    }
+
+    private boolean isVariableReference(ParseTree value) {
+        return Character.isUpperCase(value.getText().charAt(0));
     }
 
     private Operation getOperation(String operationStr) {
@@ -146,30 +173,22 @@ public class ASTListener extends ICSSBaseListener {
     }
 
     private Literal getLiteral(String value) {
-        Literal valueLiteral = null;
-
-        // Get values (color, pixel, literal, etc)
-        if (Character.isUpperCase(value.charAt(0))) {
-            return valueLiteral;
-        }
         if (value.endsWith("px")) {
-            valueLiteral = new PixelLiteral(value);
+            return new PixelLiteral(value);
         } else if (value.endsWith("%")) {
-            valueLiteral = new PercentageLiteral(value);
+            return new PercentageLiteral(value);
         } else if (value.startsWith("#")) {
-            valueLiteral = new ColorLiteral(value);
+            return new ColorLiteral(value);
+        } else if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+            return new BoolLiteral(value);
         }
-
-        return valueLiteral;
+        return null;
     }
 
     private Literal getLiteralWithScalar(String value) {
         Literal valueLiteral = null;
 
         // Get values (color, pixel, literal, etc)
-        if (Character.isUpperCase(value.charAt(0))) {
-            return valueLiteral;
-        }
         if (value.endsWith("px")) {
             valueLiteral = new PixelLiteral(value);
         } else if (value.endsWith("%")) {
@@ -193,18 +212,22 @@ public class ASTListener extends ICSSBaseListener {
     }
 
 
-    private void addSelector(ParseTree child) {
-        String selector = child.getChild(0).getText();
-
+    private void addSelector(String selector) {
         switch (selector.charAt(0)) {
             case '#':
-                currentContainer.push(new IdSelector(selector));
+                currentContainer.push(
+                        currentContainer.pop()
+                                .addChild(new IdSelector(selector)));
                 break;
             case '.':
-                currentContainer.push(new ClassSelector(selector));
+                currentContainer.push(
+                        currentContainer.pop()
+                                .addChild(new ClassSelector(selector)));
                 break;
             default:
-                currentContainer.push(new TagSelector(selector));
+                currentContainer.push(
+                        currentContainer.pop()
+                                .addChild(new TagSelector(selector)));
         }
     }
 

@@ -35,26 +35,89 @@ MUL: '*';
 ASSIGNMENT_OPERATOR: ':=';
 
 //--- PARSER: ---
-stylesheet: (variableAssignment | block) * EOF;
-
-selector: LOWER_IDENT | ID_IDENT | CLASS_IDENT;
-block: selector OPEN_BRACE declaration * CLOSE_BRACE;
-variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR (TRUE | FALSE | value | calculation) SEMICOLON;
-declaration: property COLON (value | variableReference) SEMICOLON;
-property: LOWER_IDENT;
-value: PIXELSIZE | PERCENTAGE | COLOR;
-
-/*
-    Calculations inside stylerule
-    TODO: fix bug: width: Bool +;
-*/
-variableReference
-    : CAPITAL_IDENT
-    | CAPITAL_IDENT PLUS
-    | variableReference variableCalculation
+stylesheet:
+    (variableAssignment | block)
+    | stylesheet
+    (variableAssignment | block)
     ;
 
-variableCalculation: calculation;
+/*
+    CSS selectors are:
+    - First character lowercase
+    - ID starts with #
+    - Class starts with .
+*/
+selector
+    : LOWER_IDENT
+    | ID_IDENT
+    | CLASS_IDENT
+    ;
+
+/*
+    Blocks start with { and end with }
+    A block can contain multiple declarations
+    Blocks cannot contain variables
+*/
+block
+    : selector OPEN_BRACE
+    declaration *
+    CLOSE_BRACE
+    ;
+
+/*
+    Variables can be initialized with calculations
+    Value := 10px + 1px * 1;
+*/
+variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR variableValue SEMICOLON;
+
+/*
+    Variables can be inialized with these values
+*/
+variableValue
+    : TRUE
+    | FALSE
+    | value
+    ;
+
+/*
+    Declarations like
+    color: Blue;
+*/
+declaration: property COLON declarationValue SEMICOLON;
+
+/*
+    Declaration values including calculations
+*/
+declarationValue
+    : value
+    | variableReference
+    | variableReference operator calculation
+    | calculation operator variableReference
+    | calculation operator variableReference operator calculation
+    ;
+
+/*
+    Operators to calculate with
+*/
+operator: MUL | PLUS | MIN;
+
+/*
+    Properties can only start with a lower case letter
+*/
+property: LOWER_IDENT;
+
+/*
+    A value can be a calculation or a color
+*/
+value
+    : calculation
+    | COLOR
+    ;
+
+/*
+    Variables can only start with a capital letter
+*/
+variableReference: CAPITAL_IDENT;
 
 /*
     Calculations for pixels and percentages
