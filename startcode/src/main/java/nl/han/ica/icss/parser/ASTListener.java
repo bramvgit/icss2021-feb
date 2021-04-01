@@ -105,23 +105,46 @@ public class ASTListener extends ICSSBaseListener {
                 } else {
                     addLiteral(value);
                 }
+                mergeDeclaration();
             } else {
-                ParseTree variable = value.getChild(0);
+                ParseTree startValue = value.getChild(0);
                 ParseTree operator = value.getChild(1);
                 ParseTree calculation = value.getChild(2);
 
                 Operation operation = getOperation(operator.getText());
 
-                currentContainer.push(currentContainer.pop()
-                        .addChild(new Declaration(property)
-                                .addChild(
-                                        operation
-                                )
-                        )
-                );
+                if (isVariableReference(startValue)) {
+                    addVariableReferenceToOperation(startValue, operation);
+                } else {
+                    throw new NullPointerException("Not Implemented");
+                }
+
+                String val1 = calculation.getChild(0).getChild(0).getText();
+                String op = calculation.getChild(0).getChild(1).getText();
+                String val2 = calculation.getChild(0).getChild(2).getText();
+
+                Literal l1 = getLiteralWithScalar(val1);
+                Literal l2 = getLiteralWithScalar(val2);
+                Operation op1 = getOperation(op);
+
+                op1.addChild(l1);
+                op1.addChild(l2);
+
+                operation.addChild(op1);
+
+                mergeDeclaration();
             }
-            mergeDeclaration();
         }
+    }
+
+    private void addVariableReferenceToOperation(ParseTree startValue, Operation operation) {
+        currentContainer.push(currentContainer.pop()
+                .addChild(
+                        operation.addChild(
+                                variables.get(startValue.getText())
+                        )
+                )
+        );
     }
 
     private void mergeDeclaration() {
