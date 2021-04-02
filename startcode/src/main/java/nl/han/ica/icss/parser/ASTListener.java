@@ -48,7 +48,7 @@ public class ASTListener extends ICSSBaseListener {
 
             addStyleRule();
             addSelector(selector);
-            addDeclarations(child);
+            addDeclarations(child.getChild(2));
         }
 
         if (currentContainer.size() > 0) {
@@ -93,7 +93,7 @@ public class ASTListener extends ICSSBaseListener {
     }
 
     private void addDeclarations(ParseTree child) {
-        for (int i = 2; i < child.getChildCount() - 1; i++) {
+        for (int i = 0; i < child.getChildCount(); i++) {
             String property = child.getChild(i).getChild(0).getText();
             ParseTree value = child.getChild(i).getChild(2);
 
