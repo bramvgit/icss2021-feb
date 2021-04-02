@@ -60,9 +60,15 @@ selector
 */
 stylerule
     : selector OPEN_BRACE
-    declaration *
+    (
+        declaration
+        |
+        clause
+    ) *
     CLOSE_BRACE
     ;
+
+clause: 'if';
 
 /*
     Variables can be initialized with calculations
