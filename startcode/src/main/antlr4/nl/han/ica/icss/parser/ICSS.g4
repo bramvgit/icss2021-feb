@@ -27,6 +27,8 @@ WS: [ \t\r\n]+ -> skip;
 //
 OPEN_BRACE: '{';
 CLOSE_BRACE: '}';
+OPEN_BRACKET: '[';
+CLOSE_BRACKET: ']';
 SEMICOLON: ';';
 COLON: ':';
 PLUS: '+';
@@ -55,8 +57,7 @@ selector
 
 /*
     Stylerules start with { and end with }
-    A stylerule can contain multiple declarations
-    Stylerules cannot contain variables
+    A stylerule can contain multiple declarations and clauses
 */
 stylerule
     : selector OPEN_BRACE
@@ -68,7 +69,29 @@ stylerule
     CLOSE_BRACE
     ;
 
-clause: 'if';
+/*
+    Contains if or if else clause
+*/
+clause: if_clause;
+
+/*
+    If clause can contain declarations and new clauses
+*/
+if_clause
+    : 'if' OPEN_BRACKET expression CLOSE_BRACKET OPEN_BRACE
+    ( declaration
+    | clause
+    ) * CLOSE_BRACE
+    ;
+
+/*
+    Are used in if clauses
+*/
+expression
+    : variableReference
+    | TRUE
+    | FALSE
+    ;
 
 /*
     Variables can be initialized with calculations
