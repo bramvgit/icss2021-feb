@@ -36,9 +36,9 @@ ASSIGNMENT_OPERATOR: ':=';
 
 //--- PARSER: ---
 stylesheet:
-    (variableAssignment | block)
+    (variableAssignment | stylerule)
     | stylesheet
-    (variableAssignment | block)
+    (variableAssignment | stylerule)
     ;
 
 /*
@@ -54,11 +54,11 @@ selector
     ;
 
 /*
-    Blocks start with { and end with }
-    A block can contain multiple declarations
-    Blocks cannot contain variables
+    Stylerules start with { and end with }
+    A stylerule can contain multiple declarations
+    Stylerules cannot contain variables
 */
-block
+stylerule
     : selector OPEN_BRACE
     declaration *
     CLOSE_BRACE
