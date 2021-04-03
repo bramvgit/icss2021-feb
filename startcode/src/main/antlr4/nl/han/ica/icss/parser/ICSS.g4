@@ -64,17 +64,17 @@ stylerule: selector OPEN_BRACE body CLOSE_BRACE;
 /*
     Contains if or if else clause
 */
-clause: if_clause | if_clause else_clause;
+clause: if_clause | else_clause;
 
 /*
     If clause can contain declarations and new clauses
 */
-if_clause: 'if' OPEN_BRACKET expression CLOSE_BRACKET OPEN_BRACE clause_body CLOSE_BRACE;
+if_clause: 'if' OPEN_BRACKET expression CLOSE_BRACKET OPEN_BRACE if_body CLOSE_BRACE;
 
 /*
     Else clause can contain declarations and new clauses
 */
-else_clause: 'else' OPEN_BRACE clause_body CLOSE_BRACE;
+else_clause: 'else' OPEN_BRACE else_body CLOSE_BRACE;
 
 /*
     Allow a body to contain multiple clauses and declarations in any order
@@ -85,11 +85,19 @@ body:
     ) *;
 
 /*
-    Clause bodies can contain other clauses, declarations and variable assignments
+    If clause bodies can contain everything except stylerules
 */
-clause_body:
+if_body:
     ( declaration
     | clause
+    | variableAssignment
+    ) *;
+
+/*
+    Else clauses can contain everything except stylerules and other clauses
+*/
+else_body:
+    ( declaration
     | variableAssignment
     ) *;
 
