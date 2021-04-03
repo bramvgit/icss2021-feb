@@ -69,12 +69,12 @@ clause: if_clause | if_clause else_clause;
 /*
     If clause can contain declarations and new clauses
 */
-if_clause: 'if' OPEN_BRACKET expression CLOSE_BRACKET OPEN_BRACE body CLOSE_BRACE;
+if_clause: 'if' OPEN_BRACKET expression CLOSE_BRACKET OPEN_BRACE clause_body CLOSE_BRACE;
 
 /*
     Else clause can contain declarations and new clauses
 */
-else_clause: 'else' OPEN_BRACE body CLOSE_BRACE;
+else_clause: 'else' OPEN_BRACE clause_body CLOSE_BRACE;
 
 /*
     Allow a body to contain multiple clauses and declarations in any order
@@ -82,6 +82,15 @@ else_clause: 'else' OPEN_BRACE body CLOSE_BRACE;
 body:
     ( declaration
     | clause
+    ) *;
+
+/*
+    Clause bodies can contain other clauses, declarations and variable assignments
+*/
+clause_body:
+    ( declaration
+    | clause
+    | variableAssignment
     ) *;
 
 /*
