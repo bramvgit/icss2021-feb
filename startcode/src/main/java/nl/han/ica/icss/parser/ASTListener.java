@@ -38,17 +38,31 @@ public class ASTListener extends ICSSBaseListener {
 
     @Override
     public void exitStylesheet(ICSSParser.StylesheetContext ctx) {
-        ParseTree child = getStyleRule(ctx);
+        ParseTree stylerule = getStyleRule(ctx);
 
-        if (isVariableAssignment(child)) {
-            addVariableAssignment(child);
+        if (isVariableAssignment(stylerule)) {
+            addVariableAssignment(stylerule);
         } else {
             // Style rule
-            String selector = child.getChild(0).getText();
+            String selector = stylerule.getChild(0).getText();
 
             addStyleRule();
             addSelector(selector);
-            addDeclarations(child.getChild(2));
+
+//            System.out.println(stylerule.getChild(2).getChildCount());
+
+            // Loop through all bodies
+            ParseTree body = stylerule.getChild(2);
+            for (int i = 0; i < body.getChildCount(); i++) {
+                // if
+                if (body.getChild(i).getChildCount() == 1) {
+
+                }
+                // declaration
+                else {
+                    addDeclarations(body.getChild(i));
+                }
+            }
         }
 
         if (currentContainer.size() > 0) {
@@ -92,24 +106,23 @@ public class ASTListener extends ICSSBaseListener {
         return variableAssignment;
     }
 
-    private void addDeclarations(ParseTree child) {
-        for (int i = 0; i < child.getChildCount(); i++) {
-            String property = child.getChild(i).getChild(0).getText();
-            ParseTree value = child.getChild(i).getChild(2);
+    private void addDeclarations(ParseTree declaration) {
+        String property = declaration.getChild(0).getText();
+        ParseTree value = declaration.getChild(2);
 
-            addDeclaration(property);
+        addDeclaration(property);
 
-            if (!isCalculation(value)) {
-                if (isVariableReference(value)) {
-                    addVariableReference(value);
-                } else {
-                    addLiteral(value);
-                }
+        if (!isCalculation(value)) {
+            if (isVariableReference(value)) {
+                addVariableReference(value);
             } else {
-                addCalculation(value);
+                addLiteral(value);
             }
-            mergeDeclaration();
+        } else {
+            addCalculation(value);
         }
+        mergeDeclaration();
+
     }
 
     private void addCalculation(ParseTree value) {
@@ -126,19 +139,22 @@ public class ASTListener extends ICSSBaseListener {
             throw new NullPointerException("Not Implemented");
         }
 
-        // Add calculation values
-        String val1 = calculation.getChild(0).getChild(0).getText();
-        String op = calculation.getChild(0).getChild(1).getText();
-        String val2 = calculation.getChild(0).getChild(2).getText();
+        // If calculation contains more calculations
+        if (calculation.getChild(0).getChildCount() > 1) {
+            // Add calculation values
+            String val1 = calculation.getChild(0).getChild(0).getText();
+            String op = calculation.getChild(0).getChild(1).getText();
+            String val2 = calculation.getChild(0).getChild(2).getText();
 
-        Literal l1 = getLiteralWithScalar(val1);
-        Literal l2 = getLiteralWithScalar(val2);
-        Operation op1 = getOperation(op);
+            Literal l1 = getLiteralWithScalar(val1);
+            Literal l2 = getLiteralWithScalar(val2);
+            Operation op1 = getOperation(op);
 
-        op1.addChild(l1);
-        op1.addChild(l2);
+            op1.addChild(l1);
+            op1.addChild(l2);
 
-        operation.addChild(op1);
+            operation.addChild(op1);
+        }
     }
 
     private void addVariableReferenceToOperation(ParseTree startValue, Operation operation) {
