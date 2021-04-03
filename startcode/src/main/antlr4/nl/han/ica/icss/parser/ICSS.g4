@@ -62,14 +62,9 @@ selector
 stylerule: selector OPEN_BRACE body CLOSE_BRACE;
 
 /*
-    Contains if or if else clause
-*/
-clause: if_clause | else_clause;
-
-/*
     If clause can contain declarations and new clauses
 */
-if_clause: 'if' OPEN_BRACKET expression CLOSE_BRACKET OPEN_BRACE if_body CLOSE_BRACE;
+if_clause: 'if' OPEN_BRACKET expression CLOSE_BRACKET OPEN_BRACE if_body CLOSE_BRACE | if_clause else_clause;
 
 /*
     Else clause can contain declarations and new clauses
@@ -81,7 +76,7 @@ else_clause: 'else' OPEN_BRACE else_body CLOSE_BRACE;
 */
 body:
     ( declaration
-    | clause
+    | if_clause
     ) *;
 
 /*
@@ -89,7 +84,7 @@ body:
 */
 if_body:
     ( declaration
-    | clause
+    | if_clause
     | variableAssignment
     ) *;
 
