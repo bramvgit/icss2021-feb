@@ -210,6 +210,8 @@ public class ASTListener extends ICSSBaseListener {
             op1.addChild(l2);
 
             operation.addChild(op1);
+        } else {
+            operation.addChild(getLiteralWithScalar((calculation.getChild(0).getText())));
         }
     }
 
