@@ -54,11 +54,15 @@ public class ASTListener extends ICSSBaseListener {
             ParseTree body = stylerule.getChild(2);
             for (int i = 0; i < body.getChildCount(); i++) {
                 if (isIfClause(body.getChild(i))) {
-                    currentContainer.push(currentContainer.pop().addChild(getIfClause(body.getChild(i))));
+                    currentContainer.push(currentContainer.pop().addChild(getIfClause(
+                            body.getChild(i),
+                            null)
+                    ));
                 } else if (isIfElseClause(body.getChild(i))) {
-
-                } else if (isIfElseClause(body.getChild(i))) {
-                    System.out.println("if else?");
+                    currentContainer.push(currentContainer.pop().addChild(getIfClause(
+                            body.getChild(i),
+                            new ElseClause(getIfClauseBody(body.getChild(i).getChild(2))))
+                    ));
                 } else {
                     addDeclaration(body.getChild(i));
                     mergeDeclaration();
@@ -71,18 +75,26 @@ public class ASTListener extends ICSSBaseListener {
         }
     }
 
-    private IfClause getIfClause(ParseTree tree) {
+    private IfClause getIfClause(ParseTree tree, ElseClause elseClause) {
         IfClause ifClause = new IfClause(
                 getExpression(tree),
-                getIfClauseBody(tree.getChild(5))
+                getIfClauseBody(tree.getChild(5)),
+                elseClause
         );
 
         ParseTree body = tree.getChild(5);
 
         for (int i = 0; i < body.getChildCount(); i++) {
             if (isIfClause(body.getChild(i))) {
+                ifClause.body.add(getIfClause(
+                        body.getChild(i).getChild(0),
+                        null
+                ));
             } else if (isIfElseClause(body.getChild(i))) {
-                ifClause.body.add(getIfClause(body.getChild(i).getChild(0)));
+                ifClause.body.add(getIfClause(
+                        body.getChild(i).getChild(0),
+                        new ElseClause(getIfClauseBody(body.getChild(i).getChild(1).getChild(2)))
+                ));
             }
         }
         return ifClause;
