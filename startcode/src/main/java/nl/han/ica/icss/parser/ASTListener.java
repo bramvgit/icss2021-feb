@@ -13,6 +13,7 @@ import nl.han.ica.icss.ast.selectors.IdSelector;
 import nl.han.ica.icss.ast.selectors.TagSelector;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,18 +50,18 @@ public class ASTListener extends ICSSBaseListener {
             addStyleRule();
             addSelector(selector);
 
-//            System.out.println(stylerule.getChild(2).getChildCount());
-
             // Loop through all bodies
             ParseTree body = stylerule.getChild(2);
             for (int i = 0; i < body.getChildCount(); i++) {
-                // if
-                if (body.getChild(i).getChildCount() == 1) {
+                if (isIfClause(body.getChild(i))) {
+                    currentContainer.push(currentContainer.pop().addChild(getIfClause(body.getChild(i))));
+                } else if (isIfElseClause(body.getChild(i))) {
 
-                }
-                // declaration
-                else {
-                    addDeclarations(body.getChild(i));
+                } else if (isIfElseClause(body.getChild(i))) {
+                    System.out.println("if else?");
+                } else {
+                    addDeclaration(body.getChild(i));
+                    mergeDeclaration();
                 }
             }
         }
@@ -68,6 +69,51 @@ public class ASTListener extends ICSSBaseListener {
         if (currentContainer.size() > 0) {
             ast.root.addChild(currentContainer.pop());
         }
+    }
+
+    private IfClause getIfClause(ParseTree tree) {
+        IfClause ifClause = new IfClause(
+                getExpression(tree),
+                getIfClauseBody(tree.getChild(5))
+        );
+
+        ParseTree body = tree.getChild(5);
+
+        for (int i = 0; i < body.getChildCount(); i++) {
+            if (isIfClause(body.getChild(i))) {
+            } else if (isIfElseClause(body.getChild(i))) {
+                ifClause.body.add(getIfClause(body.getChild(i).getChild(0)));
+            }
+        }
+        return ifClause;
+    }
+
+    private ArrayList<ASTNode> getIfClauseBody(ParseTree ifClauseBody) {
+        ArrayList<ASTNode> declarations = new ArrayList<>();
+
+        for (int i = 0; i < ifClauseBody.getChildCount(); i++) {
+            if (isDeclaration(ifClauseBody.getChild(i))) {
+                addDeclaration(ifClauseBody.getChild(i));
+                declarations.add(currentContainer.pop());
+            }
+        }
+        return declarations;
+    }
+
+    private boolean isDeclaration(ParseTree child) {
+        return child.getChildCount() == 4;
+    }
+
+    private boolean isIfElseClause(ParseTree child) {
+        return child.getChildCount() == 2;
+    }
+
+    private Expression getExpression(ParseTree child) {
+        return variables.get(child.getChild(2).getText());
+    }
+
+    private boolean isIfClause(ParseTree body) {
+        return body.getChildCount() == 7;
     }
 
     private void addStyleRule() {
@@ -106,11 +152,11 @@ public class ASTListener extends ICSSBaseListener {
         return variableAssignment;
     }
 
-    private void addDeclarations(ParseTree declaration) {
+    private void addDeclaration(ParseTree declaration) {
         String property = declaration.getChild(0).getText();
         ParseTree value = declaration.getChild(2);
 
-        addDeclaration(property);
+        currentContainer.push(new Declaration(property));
 
         if (!isCalculation(value)) {
             if (isVariableReference(value)) {
@@ -121,8 +167,6 @@ public class ASTListener extends ICSSBaseListener {
         } else {
             addCalculation(value);
         }
-        mergeDeclaration();
-
     }
 
     private void addCalculation(ParseTree value) {
@@ -184,10 +228,6 @@ public class ASTListener extends ICSSBaseListener {
                         getLiteral(value.getText())
                 )
         );
-    }
-
-    private void addDeclaration(String property) {
-        currentContainer.push(new Declaration(property));
     }
 
     private void addVariableReference(ParseTree value) {
