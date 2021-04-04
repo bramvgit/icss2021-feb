@@ -147,21 +147,61 @@ public class ASTListener extends ICSSBaseListener {
     }
 
     private boolean isVariableAssignment(ParseTree child) {
-        String assignment = child.getChild(1).getText();
-        VariableAssignment variableAssignment = getVariableAssignment(child);
-
-        return Character.isUpperCase(variableAssignment.name.name.charAt(0)) && assignment.equalsIgnoreCase(":=");
+        return Character.isUpperCase(
+                child.getChild(0).getText().charAt(0))
+                && child.getChildCount() == 4
+                && child.getChild(1).getText().equalsIgnoreCase(":="
+        );
     }
 
     private VariableAssignment getVariableAssignment(ParseTree child) {
-        String name = child.getChild(0).getText();
-        String value = child.getChild(2).getText();
-
         VariableAssignment variableAssignment = new VariableAssignment();
-        variableAssignment.addChild(new VariableReference(name));
-        variableAssignment.addChild(getLiteral(value));
+        variableAssignment.name = new VariableReference(
+                child.getChild(0).getText()
+        );
+        ParseTree value = child.getChild(2);
 
+        // If assignment contains a calculation
+        if (value.getChild(0).getChildCount() == 1) {
+            if (value.getChild(0).getChild(0).getChildCount() == 1) {
+                if (value.getChild(0).getChild(0).getChild(0).getChildCount() == 3) {
+                    ParseTree calculation = value.getChild(0).getChild(0).getChild(0);
+
+                    if (isCalculation(calculation)) {
+                        variableAssignment.expression = getVariableAssignmentOperation(calculation);
+                        return variableAssignment;
+                    }
+                }
+            }
+        }
+
+        variableAssignment.addChild(getLiteral(value.getText()));
         return variableAssignment;
+    }
+
+    private Operation getVariableAssignmentOperation(ParseTree calculation) {
+        Operation operation = getOperation(calculation.getChild(1).getText());
+
+        if (isCalculation(calculation.getChild(0))) {
+            operation.addChild(getVariableAssignmentOperation(calculation.getChild(0)));
+        }
+
+        if (isCalculation(calculation.getChild(1))) {
+            operation.addChild(getVariableAssignmentOperation(calculation.getChild(1)));
+        }
+
+        // Final numbers in calculation
+        if (calculation.getChild(0).getChildCount() <= 1) {
+            Literal value1 = getLiteralWithScalar(calculation.getChild(0).getText());
+            operation.addChild(value1);
+        }
+
+        // Final numbers in calculation
+        if (calculation.getChild(2).getChildCount() <= 1) {
+            Literal value2 = getLiteralWithScalar(calculation.getChild(2).getText());
+            operation.addChild(value2);
+        }
+        return operation;
     }
 
     private void addDeclaration(ParseTree declaration) {
