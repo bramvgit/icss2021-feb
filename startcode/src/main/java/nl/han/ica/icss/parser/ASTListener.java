@@ -308,7 +308,6 @@ public class ASTListener extends ICSSBaseListener {
         }
     }
 
-
     private void addSelector(String selector) {
         switch (selector.charAt(0)) {
             case '#':
@@ -325,19 +324,6 @@ public class ASTListener extends ICSSBaseListener {
                 currentContainer.push(
                         currentContainer.pop()
                                 .addChild(new TagSelector(selector)));
-        }
-    }
-
-    private boolean isStyleRule(ParseTree child) {
-        return child.getChildCount() >= 4 && !child.getChild(1).getText().equalsIgnoreCase(":=");
-    }
-
-    private boolean isScalar(String value) {
-        try {
-            Integer.parseInt(value);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
         }
     }
 
