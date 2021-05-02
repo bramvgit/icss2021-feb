@@ -52,20 +52,22 @@ public class ASTListener extends ICSSBaseListener {
 
             // Loop through all bodies
             ParseTree body = stylerule.getChild(2);
-            for (int i = 0; i < body.getChildCount(); i++) {
-                if (isIfClause(body.getChild(i))) {
-                    currentContainer.push(currentContainer.pop().addChild(getIfClause(
-                            body.getChild(i),
-                            null)
-                    ));
-                } else if (isIfElseClause(body.getChild(i))) {
-                    currentContainer.push(currentContainer.pop().addChild(getIfClause(
-                            body.getChild(i),
-                            new ElseClause(getIfClauseBody(body.getChild(i).getChild(2))))
-                    ));
-                } else {
-                    addDeclaration(body.getChild(i));
-                    mergeDeclaration();
+            if (body != null) {
+                for (int i = 0; i < body.getChildCount(); i++) {
+                    if (isIfClause(body.getChild(i))) {
+                        currentContainer.push(currentContainer.pop().addChild(getIfClause(
+                                body.getChild(i),
+                                null)
+                        ));
+                    } else if (isIfElseClause(body.getChild(i))) {
+                        currentContainer.push(currentContainer.pop().addChild(getIfClause(
+                                body.getChild(i),
+                                new ElseClause(getIfClauseBody(body.getChild(i).getChild(2))))
+                        ));
+                    } else {
+                        addDeclaration(body.getChild(i));
+                        mergeDeclaration();
+                    }
                 }
             }
         }
@@ -184,24 +186,32 @@ public class ASTListener extends ICSSBaseListener {
 
         if (isCalculation(calculation.getChild(0))) {
             operation.addChild(getVariableAssignmentOperation(calculation.getChild(0)));
+        } else if (isNumeric(String.valueOf(calculation.getChild(0).getText().indexOf(0)))) {
+            operation.addChild(getLiteralWithScalar(calculation.getChild(0).getText()));
+        } else {
+            operation.addChild(getOperation(String.valueOf(calculation.getChild(0).getText())));
         }
 
-        if (isCalculation(calculation.getChild(1))) {
-            operation.addChild(getVariableAssignmentOperation(calculation.getChild(1)));
-        }
-
-        // Final numbers in calculation
-        if (calculation.getChild(0).getChildCount() <= 1) {
-            Literal value1 = getLiteralWithScalar(calculation.getChild(0).getText());
-            operation.addChild(value1);
-        }
-
-        // Final numbers in calculation
-        if (calculation.getChild(2).getChildCount() <= 1) {
-            Literal value2 = getLiteralWithScalar(calculation.getChild(2).getText());
-            operation.addChild(value2);
+        if (isCalculation(calculation.getChild(2))) {
+            operation.addChild(getVariableAssignmentOperation(calculation.getChild(2)));
+        } else if (isNumeric(String.valueOf(calculation.getChild(2).getText().indexOf(0)))) {
+            operation.addChild(getLiteralWithScalar(calculation.getChild(2).getText()));
+        } else {
+            operation.addChild(getOperation(String.valueOf(calculation.getChild(2).getText())));
         }
         return operation;
+    }
+
+    private Operation getVariableAssignmentOperation(ParseTree calculation, Operation operation) {
+        if (isCalculation(calculation)) {
+            // Calculation
+
+        } else if (isNumeric(calculation.getText())) {
+            // Number
+        }
+
+        // Operation
+        return null;
     }
 
     private void addDeclaration(ParseTree declaration) {
