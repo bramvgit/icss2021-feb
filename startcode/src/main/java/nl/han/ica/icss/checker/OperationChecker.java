@@ -30,7 +30,7 @@ public class OperationChecker {
         }
     }
 
-    private Operation getOperationWithoutPixelAndPercent(Operation operation) throws OperationContainsPixelAndPercentException {
+    private void getOperationWithoutPixelAndPercent(Operation operation) throws OperationContainsPixelAndPercentException {
         Expression lhs = operation.lhs;
         getOperationWithoutPixelAndPercent(lhs);
 
@@ -40,7 +40,6 @@ public class OperationChecker {
         if (pixelLiteral && percentageLiteral) {
             throw new OperationContainsPixelAndPercentException();
         }
-        return operation;
     }
 
     private void getOperationWithoutPixelAndPercent(Expression expression) throws OperationContainsPixelAndPercentException {
