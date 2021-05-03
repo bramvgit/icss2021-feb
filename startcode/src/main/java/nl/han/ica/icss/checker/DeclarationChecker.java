@@ -9,11 +9,6 @@ public class DeclarationChecker {
         this.declaration = declaration;
     }
 
-    // TODO:
-    //    b {
-    //        color: 1px + 1px * 1 + Calc;
-    //    }
-    // Doesn't set error
     public void checkUndefinedVariable() {
         if (declaration.expression == null) {
             declaration.setError(declaration.property + " uses undefined variable reference");

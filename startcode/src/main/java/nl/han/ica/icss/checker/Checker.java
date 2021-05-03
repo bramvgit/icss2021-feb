@@ -39,6 +39,7 @@ public class Checker {
                             operationChecker.checkPixelAndPercent();
                             operationChecker.checkMultiplyLeftOrRightScalar();
                             operationChecker.checkColorsInOperation();
+                            operationChecker.checkUndefinedVariables();
                         }
                     }
                 });

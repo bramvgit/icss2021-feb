@@ -2,6 +2,7 @@ package nl.han.ica.icss.checker;
 
 import nl.han.ica.exception.OperationContainsColorException;
 import nl.han.ica.exception.OperationContainsPixelAndPercentException;
+import nl.han.ica.exception.OperationContainsUndefinedVariableException;
 import nl.han.ica.exception.ScalarNotFoundInMultiplyOperationException;
 import nl.han.ica.icss.ast.Expression;
 import nl.han.ica.icss.ast.Operation;
@@ -115,6 +116,35 @@ public class OperationChecker {
             getOperationWithoutColor((Operation) expression);
         } else if (expression instanceof ColorLiteral) {
             throw new OperationContainsColorException();
+        }
+    }
+
+    public void checkUndefinedVariables() {
+        try {
+            getOperationWithDefinedVariables(operation);
+        } catch (OperationContainsUndefinedVariableException e) {
+            operation.setError("Variable " + e.getName() + " is undefined.");
+        }
+    }
+
+    private void getOperationWithDefinedVariables(Operation operation) throws OperationContainsUndefinedVariableException {
+        Expression lhs = operation.lhs;
+        getOperationWithDefinedVariables(lhs);
+
+        Expression rhs = operation.rhs;
+        getOperationWithDefinedVariables(rhs);
+    }
+
+    private void getOperationWithDefinedVariables(Expression expression) throws OperationContainsUndefinedVariableException {
+        if (expression instanceof VariableReference) { // TODO: this check already happened in parser, check if time remains
+            VariableReference variableReference = (VariableReference) expression;
+            expression = variableTypes.get(variableReference.name);
+
+            if (expression == null) throw new OperationContainsUndefinedVariableException(variableReference.name);
+        }
+
+        if (expression instanceof Operation) {
+            getOperationWithDefinedVariables((Operation) expression);
         }
     }
 }
