@@ -1,11 +1,14 @@
 package nl.han.ica.icss.checker;
 
 import nl.han.ica.exception.OperationContainsPixelAndPercentException;
+import nl.han.ica.exception.ScalarNotFoundInMultiplyOperationException;
 import nl.han.ica.icss.ast.Expression;
 import nl.han.ica.icss.ast.Operation;
 import nl.han.ica.icss.ast.VariableReference;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
+import nl.han.ica.icss.ast.literals.ScalarLiteral;
+import nl.han.ica.icss.ast.operations.MultiplyOperation;
 
 import java.util.Map;
 
@@ -54,5 +57,34 @@ public class OperationChecker {
         } else if (expression instanceof PercentageLiteral) {
             percentageLiteral = true;
         }
+    }
+
+    public void checkMultiplyLeftOrRightScalar() {
+        if (operation instanceof MultiplyOperation) {
+            try {
+                findScalarInMultiplyOperation(operation);
+            } catch (ScalarNotFoundInMultiplyOperationException e) {
+                operation.setError("Multiply-calculations require at least 1 scalar.");
+            }
+        }
+    }
+
+    private void findScalarInMultiplyOperation(Operation operation) throws ScalarNotFoundInMultiplyOperationException {
+        Expression lhs = operation.lhs;
+        if (lhs instanceof MultiplyOperation) {
+            findScalarInMultiplyOperation((MultiplyOperation) lhs);
+        } else if (lhs instanceof VariableReference) {
+            lhs = variableTypes.get(((VariableReference) lhs).name);
+        }
+
+        Expression rhs = operation.rhs;
+        if (rhs instanceof MultiplyOperation) {
+            findScalarInMultiplyOperation((MultiplyOperation) rhs);
+        } else if (rhs instanceof VariableReference) {
+            lhs = variableTypes.get(((VariableReference) rhs).name);
+        }
+
+        if (!(lhs instanceof ScalarLiteral) && !(rhs instanceof ScalarLiteral))
+            throw new ScalarNotFoundInMultiplyOperationException();
     }
 }

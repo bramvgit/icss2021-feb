@@ -35,7 +35,9 @@ public class Checker {
                         declarationChecker.checkUndefinedVariable();
 
                         if (declaration.expression instanceof Operation) {
-                            new OperationChecker((Operation) declaration.expression, variableTypes).checkPixelAndPercent();
+                            OperationChecker operationChecker = new OperationChecker((Operation) declaration.expression, variableTypes);
+                            operationChecker.checkPixelAndPercent();
+                            operationChecker.checkMultiplyLeftOrRightScalar();
                         }
                     }
                 });
