@@ -216,53 +216,50 @@ public class ASTListener extends ICSSBaseListener {
 
     private void addDeclaration(ParseTree declaration) {
         String property = declaration.getChild(0).getText();
-        ParseTree value = declaration.getChild(2);
+        ParseTree value = declaration.getChild(2).getChild(0).getChild(0);
 
         currentContainer.push(new Declaration(property));
 
-        if (!isCalculation(value)) {
-            if (isVariableReference(value)) {
+        if (isCalculation(declaration.getChild(2))) {
+            currentContainer.push(currentContainer.pop().addChild(getCalculation(declaration.getChild(2))));
+        } else if (value.getChildCount() == 1) {
+            if (isCalculation(value.getChild(0))) {
+                currentContainer.push(currentContainer.pop().addChild(getCalculation(value.getChild(0))));
+            } else if (isVariableReference(value)) {
                 addVariableReference(value);
             } else {
                 addLiteral(value);
             }
+        } else if (isVariableReference(value)) {
+            addVariableReference(value);
         } else {
-            addCalculation(value);
+            addLiteral(value);
         }
     }
 
-    private void addCalculation(ParseTree value) {
-        ParseTree startValue = value.getChild(0);
-        ParseTree operator = value.getChild(1);
-        ParseTree calculation = value.getChild(2);
+    private Operation getCalculation(ParseTree calculation) {
+        Operation operation = getOperation(calculation.getChild(1).getText());
 
-        // Add operation
-        Operation operation = getOperation(operator.getText());
+        for (int i = 0; i <= 2; i += 2) {
+            ParseTree value = calculation.getChild(i);
 
-        if (isVariableReference(startValue)) {
-            addVariableReferenceToOperation(startValue, operation);
-        } else {
-            throw new NullPointerException("Not Implemented");
+            if (value.getChildCount() == 1) {
+                value = value.getChild(0);
+            }
+
+            if (isVariableReference(value)) {
+                operation.addChild(variables.get(value.getText()));
+            } else if (isCalculation(value)) {
+                operation.addChild(getCalculation(value));
+            } else if (isNumeric(value.getText())) {
+                operation.addChild(getLiteralWithScalar(value.getText()));
+            } else if (getLiteral(value.getText()) != null) {
+                operation.addChild(getLiteral(value.getText()));
+            } else {
+                operation.addChild(getOperation(String.valueOf(value.getText())));
+            }
         }
-
-        // If calculation contains more calculations
-        if (calculation.getChild(0).getChildCount() > 1) {
-            // Add calculation values
-            String val1 = calculation.getChild(0).getChild(0).getText();
-            String op = calculation.getChild(0).getChild(1).getText();
-            String val2 = calculation.getChild(0).getChild(2).getText();
-
-            Literal l1 = getLiteralWithScalar(val1);
-            Literal l2 = getLiteralWithScalar(val2);
-            Operation op1 = getOperation(op);
-
-            op1.addChild(l1);
-            op1.addChild(l2);
-
-            operation.addChild(op1);
-        } else {
-            operation.addChild(getLiteralWithScalar((calculation.getChild(0).getText())));
-        }
+        return operation;
     }
 
     private void addVariableReferenceToOperation(ParseTree startValue, Operation operation) {
