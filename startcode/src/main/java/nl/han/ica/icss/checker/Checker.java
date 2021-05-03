@@ -33,6 +33,10 @@ public class Checker {
                         DeclarationChecker declarationChecker = new DeclarationChecker(declaration);
 
                         declarationChecker.checkUndefinedVariable();
+
+                        if (declaration.expression instanceof Operation) {
+                            new OperationChecker((Operation) declaration.expression, variableTypes).checkPixelAndPercent();
+                        }
                     }
                 });
             }

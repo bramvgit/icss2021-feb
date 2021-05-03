@@ -15,7 +15,6 @@ public class DeclarationChecker {
     //    }
     // Doesn't set error
     public void checkUndefinedVariable() {
-        System.out.println(declaration.expression);
         if (declaration.expression == null) {
             declaration.setError(declaration.property + " uses undefined variable reference");
         }
