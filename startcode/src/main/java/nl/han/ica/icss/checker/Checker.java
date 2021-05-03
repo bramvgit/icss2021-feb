@@ -32,11 +32,9 @@ public class Checker {
                 stylerule.body.forEach(body -> {
                     if (body instanceof Declaration) {
                         Declaration declaration = (Declaration) body;
+                        DeclarationChecker declarationChecker = new DeclarationChecker(declaration);
 
-                        // Undefined variable
-                        if (declaration.expression == null) {
-                            declaration.setError(declaration.property + " uses undefined variable reference");
-                        }
+                        declarationChecker.checkUndefinedVariable();
 
                         // Invalid value for property (for variables)
                         if (declaration.expression instanceof VariableReference) {
