@@ -202,18 +202,6 @@ public class ASTListener extends ICSSBaseListener {
         return operation;
     }
 
-    private Operation getVariableAssignmentOperation(ParseTree calculation, Operation operation) {
-        if (isCalculation(calculation)) {
-            // Calculation
-
-        } else if (isNumeric(calculation.getText())) {
-            // Number
-        }
-
-        // Operation
-        return null;
-    }
-
     private void addDeclaration(ParseTree declaration) {
         String property = declaration.getChild(0).getText();
         ParseTree value = declaration.getChild(2).getChild(0).getChild(0);
