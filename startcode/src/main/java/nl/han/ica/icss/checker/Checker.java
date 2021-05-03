@@ -38,6 +38,7 @@ public class Checker {
                             OperationChecker operationChecker = new OperationChecker((Operation) declaration.expression, variableTypes);
                             operationChecker.checkPixelAndPercent();
                             operationChecker.checkMultiplyLeftOrRightScalar();
+                            operationChecker.checkColorsInOperation();
                         }
                     }
                 });

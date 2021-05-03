@@ -1,10 +1,12 @@
 package nl.han.ica.icss.checker;
 
+import nl.han.ica.exception.OperationContainsColorException;
 import nl.han.ica.exception.OperationContainsPixelAndPercentException;
 import nl.han.ica.exception.ScalarNotFoundInMultiplyOperationException;
 import nl.han.ica.icss.ast.Expression;
 import nl.han.ica.icss.ast.Operation;
 import nl.han.ica.icss.ast.VariableReference;
+import nl.han.ica.icss.ast.literals.ColorLiteral;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
 import nl.han.ica.icss.ast.literals.ScalarLiteral;
@@ -86,5 +88,33 @@ public class OperationChecker {
 
         if (!(lhs instanceof ScalarLiteral) && !(rhs instanceof ScalarLiteral))
             throw new ScalarNotFoundInMultiplyOperationException();
+    }
+
+    public void checkColorsInOperation() {
+        try {
+            getOperationWithoutColor(operation);
+        } catch (OperationContainsColorException e) {
+            operation.setError("Calculations cannot contain colors.");
+        }
+    }
+
+    private void getOperationWithoutColor(Operation operation) throws OperationContainsColorException {
+        Expression lhs = operation.lhs;
+        getOperationWithoutColor(lhs);
+
+        Expression rhs = operation.rhs;
+        getOperationWithoutColor(rhs);
+    }
+
+    private void getOperationWithoutColor(Expression expression) throws OperationContainsColorException {
+        if (expression instanceof VariableReference) {
+            VariableReference variableReference = (VariableReference) expression;
+            expression = variableTypes.get(variableReference.name);
+        }
+        if (expression instanceof Operation) {
+            getOperationWithoutColor((Operation) expression);
+        } else if (expression instanceof ColorLiteral) {
+            throw new OperationContainsColorException();
+        }
     }
 }
