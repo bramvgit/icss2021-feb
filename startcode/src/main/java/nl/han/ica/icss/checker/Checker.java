@@ -7,35 +7,33 @@ import java.util.Map;
 
 
 public class Checker {
-
-    //private IHANLinkedList<HashMap<String, ExpressionType>> variableTypes;
-    private Map<String, Expression> variableTypes;
-
-    private Map<String, String> propertyTypes;
+    private Map<String, Expression> variables;
 
     public void check(AST ast) {
-        variableTypes = new HashMap<>();
-        propertyTypes = new HashMap<>();
+        variables = new HashMap<>();
 
         ast.root.body.forEach(part -> {
             // Variable assignment
             if (part instanceof VariableAssignment) {
                 VariableAssignment variableAssignment = (VariableAssignment) part;
-                variableTypes.put(variableAssignment.name.name, variableAssignment.expression);
+                variables.put(variableAssignment.name.name, variableAssignment.expression);
             }
 
             // Style rule
             if (part instanceof Stylerule) {
                 Stylerule stylerule = (Stylerule) part;
+
                 stylerule.body.forEach(body -> {
+
                     if (body instanceof Declaration) {
                         Declaration declaration = (Declaration) body;
-                        DeclarationChecker declarationChecker = new DeclarationChecker(declaration);
+                        DeclarationChecker declarationChecker = new DeclarationChecker(declaration, variables);
 
                         declarationChecker.checkUndefinedVariable();
+                        declarationChecker.checkInvalidVariableType();
 
                         if (declaration.expression instanceof Operation) {
-                            OperationChecker operationChecker = new OperationChecker((Operation) declaration.expression, variableTypes);
+                            OperationChecker operationChecker = new OperationChecker((Operation) declaration.expression, variables);
                             operationChecker.checkPixelAndPercent();
                             operationChecker.checkMultiplyLeftOrRightScalar();
                             operationChecker.checkColorsInOperation();
