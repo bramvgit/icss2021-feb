@@ -54,15 +54,10 @@ public class ASTListener extends ICSSBaseListener {
             ParseTree body = stylerule.getChild(2);
             if (body != null) {
                 for (int i = 0; i < body.getChildCount(); i++) {
-                    if (isIfClause(body.getChild(i))) {
-                        currentContainer.push(currentContainer.pop().addChild(getIfClause(
+                    if (isClause(body.getChild(i))) {
+                        currentContainer.push(currentContainer.pop().addChild(getClause(
                                 body.getChild(i),
                                 null)
-                        ));
-                    } else if (isIfElseClause(body.getChild(i))) {
-                        currentContainer.push(currentContainer.pop().addChild(getIfClause(
-                                body.getChild(i),
-                                new ElseClause(getIfClauseBody(body.getChild(i).getChild(2))))
                         ));
                     } else {
                         addDeclaration(body.getChild(i));
@@ -77,32 +72,42 @@ public class ASTListener extends ICSSBaseListener {
         }
     }
 
-    private IfClause getIfClause(ParseTree tree, ElseClause elseClause) {
-        IfClause ifClause = new IfClause(
-                getExpression(tree),
-                getIfClauseBody(tree.getChild(5)),
-                elseClause
-        );
+    private ASTNode getClause(ParseTree tree, ElseClause elseClause) {
+        ParseTree ifBodyTree;
+        IfClause ifClause;
 
-        ParseTree body = tree.getChild(5);
+        if (tree.getChildCount() == 2) {
+            ParseTree ifClauseTree = tree.getChild(0);
+            ifBodyTree = ifClauseTree.getChild(5);
+            ParseTree elseClauseTree = tree.getChild(1);
 
-        for (int i = 0; i < body.getChildCount(); i++) {
-            if (isIfClause(body.getChild(i))) {
-                ifClause.body.add(getIfClause(
-                        body.getChild(i).getChild(0),
-                        null
-                ));
-            } else if (isIfElseClause(body.getChild(i))) {
-                ifClause.body.add(getIfClause(
-                        body.getChild(i).getChild(0),
-                        new ElseClause(getIfClauseBody(body.getChild(i).getChild(1).getChild(2)))
-                ));
+            ifClause = new IfClause(
+                    getExpression(ifClauseTree),
+                    getClauseBody(ifBodyTree),
+                    new ElseClause(getClauseBody(elseClauseTree.getChild(2)))
+            );
+        } else {
+            ifBodyTree = tree.getChild(5);
+            ifClause = new IfClause(
+                    getExpression(tree),
+                    getClauseBody(ifBodyTree),
+                    elseClause
+            );
+        }
+
+        for (int i = 0; i < ifBodyTree.getChildCount(); i++) {
+            ParseTree part = ifBodyTree.getChild(i);
+
+            if (isClause(part)) {
+                ifClause.body.add(
+                        getClause(part, ifClause.elseClause)
+                );
             }
         }
         return ifClause;
     }
 
-    private ArrayList<ASTNode> getIfClauseBody(ParseTree ifClauseBody) {
+    private ArrayList<ASTNode> getClauseBody(ParseTree ifClauseBody) {
         ArrayList<ASTNode> declarations = new ArrayList<>();
 
         for (int i = 0; i < ifClauseBody.getChildCount(); i++) {
@@ -118,15 +123,23 @@ public class ASTListener extends ICSSBaseListener {
         return child.getChildCount() == 4;
     }
 
-    private boolean isIfElseClause(ParseTree child) {
-        return child.getChildCount() == 2;
-    }
-
     private Expression getExpression(ParseTree child) {
-        return variables.get(child.getChild(2).getText());
+        String expression = child.getChild(2).getText();
+
+        VariableReference variableReference = variables.get(expression);
+        if (variableReference != null) {
+            return variableReference;
+        }
+        return getLiteral(expression);
     }
 
-    private boolean isIfClause(ParseTree body) {
+    private boolean isClause(ParseTree body) {
+        if (body.getChildCount() == 2) {
+            ParseTree ifClause = body.getChild(0);
+            ParseTree elseClause = body.getChild(1);
+
+            return ifClause.getChildCount() == 7 && elseClause.getChildCount() == 4;
+        }
         return body.getChildCount() == 7;
     }
 
