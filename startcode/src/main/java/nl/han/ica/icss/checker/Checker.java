@@ -42,6 +42,8 @@ public class Checker {
                     } else if (body instanceof IfClause) {
                         IfClause ifClause = (IfClause) body;
                         IfClauseChecker ifClauseChecker = new IfClauseChecker(ifClause, variables);
+
+                        ifClauseChecker.checkConditionalExpression();
                     }
                 });
             }
