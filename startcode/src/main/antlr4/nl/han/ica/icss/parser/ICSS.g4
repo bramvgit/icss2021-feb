@@ -38,9 +38,10 @@ ASSIGNMENT_OPERATOR: ':=';
 
 //--- PARSER: ---
 stylesheet:
-    (variableAssignment | stylerule)
-    | stylesheet
-    (variableAssignment | stylerule)
+    (
+    variableAssignment
+    | stylerule
+    ) *
     ;
 
 /*
