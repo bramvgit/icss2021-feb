@@ -39,6 +39,9 @@ public class Checker {
                             operationChecker.checkColorsInOperation();
                             operationChecker.checkUndefinedVariables();
                         }
+                    } else if (body instanceof IfClause) {
+                        IfClause ifClause = (IfClause) body;
+                        IfClauseChecker ifClauseChecker = new IfClauseChecker(ifClause, variables);
                     }
                 });
             }
