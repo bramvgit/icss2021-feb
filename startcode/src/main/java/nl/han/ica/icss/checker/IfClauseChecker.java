@@ -1,11 +1,13 @@
 package nl.han.ica.icss.checker;
 
-import nl.han.ica.exception.IfClauseContainsInvalidConditionalExpressionException;
+import nl.han.ica.icss.ast.ASTNode;
 import nl.han.ica.icss.ast.Expression;
 import nl.han.ica.icss.ast.IfClause;
 import nl.han.ica.icss.ast.VariableReference;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class IfClauseChecker {
@@ -18,31 +20,24 @@ public class IfClauseChecker {
     }
 
     public void checkConditionalExpression() {
-        try {
-            getIfClausesWithCorrectConditionalExpression(ifClause);
-        } catch (IfClauseContainsInvalidConditionalExpressionException e) {
-            ifClause.setError(e.getIfClause().conditionalExpression.getNodeLabel() + " is an invalid conditional expression.");
-        }
+        List<IfClause> invalid = checkIfClauseForInvalidConditionalExpression(ifClause, new ArrayList<>());
+        invalid.forEach(clause -> clause.setError(clause.conditionalExpression.toString() + " is an invalid conditional expression."));
     }
 
-    // TODO: this doesn't work in parser
-    //    Bool := TRUE;
-    //    a {
-    //        if [Bool] {
-    //            width: 10px;
-    //            if [Bool] {
-    //                width: 10px;
-    //            }
-    //        }
-    //    }
-    private IfClause getIfClausesWithCorrectConditionalExpression(IfClause ifClause) throws IfClauseContainsInvalidConditionalExpressionException {
+    // TODO: doesn't work with undefined variables
+    private List<IfClause> checkIfClauseForInvalidConditionalExpression(IfClause ifClause, List<IfClause> invalid) {
         Expression condition = ifClause.conditionalExpression;
         if (condition instanceof VariableReference) {
             condition = variables.get(((VariableReference) condition).name);
         }
 
-        if (!(condition instanceof BoolLiteral))
-            throw new IfClauseContainsInvalidConditionalExpressionException(ifClause);
-        return ifClause;
+        if (!(condition instanceof BoolLiteral)) invalid.add(ifClause);
+
+        for (ASTNode node : ifClause.body) {
+            if (node instanceof IfClause) {
+                checkIfClauseForInvalidConditionalExpression((IfClause) node, invalid);
+            }
+        }
+        return invalid;
     }
 }
