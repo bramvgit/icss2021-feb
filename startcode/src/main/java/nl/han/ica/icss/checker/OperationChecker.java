@@ -91,6 +91,11 @@ public class OperationChecker {
             throw new ScalarNotFoundInMultiplyOperationException();
     }
 
+    // TODO: this fails
+    //    Width := #000000;
+    //    a {
+    //        bob: 1px + Width + 1px;
+    //    }
     public void checkColorsInOperation() {
         try {
             getOperationWithoutColor(operation);
