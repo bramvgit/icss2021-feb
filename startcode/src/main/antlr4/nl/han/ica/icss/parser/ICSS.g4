@@ -76,6 +76,7 @@ else_clause: 'else' OPEN_BRACE else_body CLOSE_BRACE;
 */
 body:
     ( declaration
+    | variableAssignment
     | if_clause
     ) *;
 
