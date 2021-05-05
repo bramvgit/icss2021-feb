@@ -1,19 +1,23 @@
 package nl.han.ica.icss.visitor;
 
 import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.literals.PercentageLiteral;
+import nl.han.ica.icss.ast.literals.PixelLiteral;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class VariableVisitor implements Visitor {
-    private final Map<String, ASTNode> variables;
-    private final Map<Declaration, ASTNode> declarations;
-    private final Map<Operation, Declaration> operations;
+    private final Map<String, ASTNode> variableParents;
+    private final Map<Declaration, ASTNode> declarationParents;
+    private final Map<Operation, Declaration> operationParents;
+    private final Map<String, VariableAssignment> variables;
 
     public VariableVisitor() {
+        variableParents = new HashMap<>();
+        declarationParents = new HashMap<>();
+        operationParents = new HashMap<>();
         variables = new HashMap<>();
-        declarations = new HashMap<>();
-        operations = new HashMap<>();
     }
 
     @Override
@@ -33,13 +37,13 @@ public class VariableVisitor implements Visitor {
         if (expression instanceof VariableReference) {
             VariableReference variableReference = (VariableReference) expression;
             variableReference.accept(this);
-            ASTNode variableParent = variables.get(variableReference.name);
-            ASTNode declarationParent = declarations.get(declaration);
+            ASTNode variableParent = variableParents.get(variableReference.name);
+            ASTNode declarationParent = declarationParents.get(declaration);
 
             checkVariableReferenceScope(variableReference, variableParent, declarationParent);
         } else if (expression instanceof Operation) {
             Operation operation = (Operation) expression;
-            operations.put(operation, declaration);
+            operationParents.put(operation, declaration);
             operation.accept(this);
         }
     }
@@ -66,11 +70,40 @@ public class VariableVisitor implements Visitor {
 
     @Override
     public void visit(Operation operation) {
+        checkOperandsTypesAreEqual(operation);
+
         Expression lhs = operation.lhs;
         checkOperationForUndefinedVariables(operation, lhs);
 
         Expression rhs = operation.rhs;
         checkOperationForUndefinedVariables(operation, rhs);
+    }
+
+    private void checkOperandsTypesAreEqual(Operation operation) {
+        Expression lhs = operation.lhs;
+        if (lhs instanceof Operation) {
+            checkOperandsTypesAreEqual((Operation) lhs);
+        }
+
+        Expression rhs = operation.rhs;
+        if (rhs instanceof Operation) {
+            checkOperandsTypesAreEqual((Operation) rhs);
+        }
+
+        if (lhs instanceof VariableReference) {
+            lhs = variables.get(((VariableReference) lhs).name).expression;
+        }
+        if (rhs instanceof VariableReference) {
+            rhs = variables.get(((VariableReference) rhs).name).expression;
+        }
+
+        if (lhs instanceof PixelLiteral) {
+            if (rhs instanceof PercentageLiteral)
+                operation.setError("Calculations with pixels and percentages is not possible.");
+        } else if (lhs instanceof PercentageLiteral) {
+            if (rhs instanceof PixelLiteral)
+                operation.setError("Calculations with pixels and percentages is not possible.");
+        }
     }
 
     private void checkOperationForUndefinedVariables(Operation operation, Expression expression) {
@@ -80,9 +113,9 @@ public class VariableVisitor implements Visitor {
             ((VariableReference) expression).accept(this);
             VariableReference variableReference = (VariableReference) expression;
             variableReference.accept(this);
-            ASTNode variableParent = variables.get(variableReference.name);
-            Declaration operationParent = operations.get(operation);
-            ASTNode declarationParent = declarations.get(operationParent);
+            ASTNode variableParent = variableParents.get(variableReference.name);
+            Declaration operationParent = operationParents.get(operation);
+            ASTNode declarationParent = declarationParents.get(operationParent);
 
             checkVariableReferenceScope(variableReference, variableParent, declarationParent);
         }
@@ -94,21 +127,27 @@ public class VariableVisitor implements Visitor {
 
         for (ASTNode node : ifClause.body) {
             if (node instanceof VariableAssignment) {
-                variables.put(((VariableAssignment) node).name.name, ifClause);
+                VariableAssignment variableAssignment = (VariableAssignment) node;
+
+                variables.put(variableAssignment.name.name, variableAssignment);
+                variableParents.put(variableAssignment.name.name, ifClause);
             } else if (node instanceof Declaration) {
-                declarations.put((Declaration) node, ifClause);
+                declarationParents.put((Declaration) node, ifClause);
                 ((Declaration) node).accept(this);
             } else if (node instanceof IfClause) {
                 ((IfClause) node).accept(this);
             }
         }
 
-        if (ifClause.elseClause != null) {
+        if (elseClause != null) {
             for (ASTNode node : elseClause.body) {
                 if (node instanceof VariableAssignment) {
-                    variables.put(((VariableAssignment) node).name.name, elseClause);
+                    VariableAssignment variableAssignment = (VariableAssignment) node;
+
+                    variables.put(variableAssignment.name.name, variableAssignment);
+                    variableParents.put(variableAssignment.name.name, elseClause);
                 } else if (node instanceof Declaration) {
-                    declarations.put((Declaration) node, elseClause);
+                    declarationParents.put((Declaration) node, elseClause);
                     ((Declaration) node).accept(this);
                 }
             }
@@ -119,9 +158,12 @@ public class VariableVisitor implements Visitor {
     public void visit(Stylerule stylerule) {
         for (ASTNode node : stylerule.body) {
             if (node instanceof VariableAssignment) {
-                variables.put(((VariableAssignment) node).name.name, stylerule);
+                VariableAssignment variableAssignment = (VariableAssignment) node;
+
+                variables.put(variableAssignment.name.name, variableAssignment);
+                variableParents.put(variableAssignment.name.name, stylerule);
             } else if (node instanceof Declaration) {
-                declarations.put((Declaration) node, stylerule);
+                declarationParents.put((Declaration) node, stylerule);
                 ((Declaration) node).accept(this);
             }
         }
@@ -131,7 +173,10 @@ public class VariableVisitor implements Visitor {
     public void visit(Stylesheet stylesheet) {
         for (ASTNode node : stylesheet.body) {
             if (node instanceof VariableAssignment) {
-                variables.put(((VariableAssignment) node).name.name, stylesheet);
+                VariableAssignment variableAssignment = (VariableAssignment) node;
+
+                variables.put(variableAssignment.name.name, variableAssignment);
+                variableParents.put(variableAssignment.name.name, stylesheet);
             }
         }
     }
