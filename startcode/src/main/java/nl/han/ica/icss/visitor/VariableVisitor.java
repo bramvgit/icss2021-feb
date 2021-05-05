@@ -10,10 +10,7 @@ import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class VariableVisitor implements Visitor {
     private final Map<String, ASTNode> variableParents;
@@ -33,7 +30,7 @@ public class VariableVisitor implements Visitor {
     }
 
     private void initializeTypes() {
-        List<ExpressionType> colors = Arrays.asList(
+        List<ExpressionType> colors = Collections.singletonList(
                 ExpressionType.COLOR
         );
         List<ExpressionType> width = Arrays.asList(
@@ -87,6 +84,8 @@ public class VariableVisitor implements Visitor {
                 } else if (expression instanceof ColorLiteral && !expressionType.contains(ExpressionType.COLOR)) {
                     declaration.setError("Property " + declaration.property.name + " does not accept colors as value.");
                 }
+            } else {
+                declaration.setError("Property " + declaration.property.name + " does not exist.");
             }
         }
     }
