@@ -1,5 +1,7 @@
 package nl.han.ica.icss.ast;
 
+import nl.han.ica.icss.visitor.Visitor;
+
 import java.util.ArrayList;
 
 public abstract class Operation extends Expression {
@@ -19,11 +21,15 @@ public abstract class Operation extends Expression {
 
     @Override
     public ASTNode addChild(ASTNode child) {
-        if(lhs == null) {
+        if (lhs == null) {
             lhs = (Expression) child;
-        } else if(rhs == null) {
+        } else if (rhs == null) {
             rhs = (Expression) child;
         }
         return this;
+    }
+
+    public void accept(Visitor visitor) {
+        visitor.visit(this);
     }
 }

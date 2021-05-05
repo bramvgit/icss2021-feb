@@ -1,8 +1,9 @@
 package nl.han.ica.icss.ast;
 
-import nl.han.ica.icss.checker.SemanticError;
+import nl.han.ica.icss.visitor.Visitor;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -52,5 +53,13 @@ public class Stylesheet extends ASTNode {
 	public int hashCode() {
 
 		return Objects.hash(body);
+	}
+
+	public void accept(List<Visitor> visitors) {
+		visitors.forEach(visitor -> visitor.visit(this));
+	}
+
+	public void accept(Visitor visitor) {
+		visitor.visit(this);
 	}
 }
