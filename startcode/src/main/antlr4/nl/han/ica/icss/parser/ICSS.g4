@@ -108,10 +108,9 @@ expression
     ;
 
 /*
-    Variables can be initialized with calculations
-    Value := 10px + 1px * 1;
+    Variables can only start with a capital letter
 */
-variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR variableValue SEMICOLON;
+variableReference: CAPITAL_IDENT;
 
 /*
     Variables can be inialized with these values
@@ -120,7 +119,14 @@ variableValue
     : TRUE
     | FALSE
     | value
+    | calculation
     ;
+
+/*
+    Variables can be initialized with calculations
+    Value := 10px + 1px * 1;
+*/
+variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR variableValue SEMICOLON;
 
 /*
     Declarations like
@@ -132,11 +138,9 @@ declaration: property COLON declarationValue SEMICOLON;
     Declaration values including calculations
 */
 declarationValue
-    : value
+    : calculation
     | variableReference
-    | variableReference operator calculation
-    | calculation operator variableReference
-    | calculation operator variableReference operator calculation
+    | value
     ;
 
 /*
@@ -150,17 +154,13 @@ operator: MUL | PLUS | MIN;
 property: LOWER_IDENT;
 
 /*
-    A value can be a calculation or a color
+    Standard values
 */
 value
-    : calculation
+    : PIXELSIZE
+    | PERCENTAGE
     | COLOR
     ;
-
-/*
-    Variables can only start with a capital letter
-*/
-variableReference: CAPITAL_IDENT;
 
 /*
     Calculations for pixels and percentages
@@ -172,22 +172,40 @@ calculation: pixelCalculation | percentageCalculation;
     Calculate pixels
     Pixel := 10 * 10px + 1 * 1px + 1px * 1 + 10px;
 */
-pixelCalculation
-    : PIXELSIZE
+pixelCalculation:
+    PIXELSIZE PLUS PIXELSIZE
+    | PIXELSIZE PLUS pixelCalculation
+    | pixelCalculation PLUS PIXELSIZE
+    | pixelCalculation PLUS pixelCalculation
+
+    | PIXELSIZE MIN PIXELSIZE
+    | PIXELSIZE MIN pixelCalculation
+    | pixelCalculation MIN PIXELSIZE
+    | pixelCalculation MIN pixelCalculation
+
+    | PIXELSIZE MUL SCALAR
+    | SCALAR MUL PIXELSIZE
     | pixelCalculation MUL SCALAR
     | SCALAR MUL pixelCalculation
-    | pixelCalculation PLUS pixelCalculation
-    | pixelCalculation MIN pixelCalculation
     ;
 
 /*
     Calculate percentage
     Percent := 10 * 10% + 10% - 10% * 10;
 */
-percentageCalculation
-    : PERCENTAGE
+percentageCalculation:
+    PERCENTAGE PLUS PERCENTAGE
+    | PERCENTAGE PLUS percentageCalculation
+    | percentageCalculation PLUS PERCENTAGE
+    | percentageCalculation PLUS percentageCalculation
+
+    | PERCENTAGE MIN PERCENTAGE
+    | PERCENTAGE MIN percentageCalculation
+    | percentageCalculation MIN PERCENTAGE
+    | percentageCalculation MIN percentageCalculation
+
+    | PERCENTAGE MUL SCALAR
+    | SCALAR MUL PERCENTAGE
     | percentageCalculation MUL SCALAR
     | SCALAR MUL percentageCalculation
-    | percentageCalculation PLUS percentageCalculation
-    | percentageCalculation MIN percentageCalculation
     ;
