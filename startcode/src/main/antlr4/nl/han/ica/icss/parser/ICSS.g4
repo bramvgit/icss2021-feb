@@ -173,20 +173,20 @@ calculation: pixelCalculation | percentageCalculation;
     Pixel := 10 * 10px + 1 * 1px + 1px * 1 + 10px;
 */
 pixelCalculation:
-    PIXELSIZE PLUS PIXELSIZE
-    | PIXELSIZE PLUS pixelCalculation
-    | pixelCalculation PLUS PIXELSIZE
+    pixel PLUS pixel
+    | pixel PLUS pixelCalculation
+    | pixelCalculation PLUS pixel
     | pixelCalculation PLUS pixelCalculation
 
-    | PIXELSIZE MIN PIXELSIZE
-    | PIXELSIZE MIN pixelCalculation
-    | pixelCalculation MIN PIXELSIZE
+    | pixel MIN pixel
+    | pixel MIN pixelCalculation
+    | pixelCalculation MIN pixel
     | pixelCalculation MIN pixelCalculation
 
-    | PIXELSIZE MUL SCALAR
-    | SCALAR MUL PIXELSIZE
-    | pixelCalculation MUL SCALAR
-    | SCALAR MUL pixelCalculation
+    | pixel MUL scalar
+    | scalar MUL pixel
+    | pixelCalculation MUL scalar
+    | scalar MUL pixelCalculation
 
     | variableReference PLUS pixelCalculation
     | pixelCalculation PLUS variableReference
@@ -201,20 +201,20 @@ pixelCalculation:
     Percent := 10 * 10% + 10% - 10% * 10;
 */
 percentageCalculation:
-    PERCENTAGE PLUS PERCENTAGE
-    | PERCENTAGE PLUS percentageCalculation
-    | percentageCalculation PLUS PERCENTAGE
+    percent PLUS percent
+    | percent PLUS percentageCalculation
+    | percentageCalculation PLUS percent
     | percentageCalculation PLUS percentageCalculation
 
-    | PERCENTAGE MIN PERCENTAGE
-    | PERCENTAGE MIN percentageCalculation
-    | percentageCalculation MIN PERCENTAGE
+    | percent MIN percent
+    | percent MIN percentageCalculation
+    | percentageCalculation MIN percent
     | percentageCalculation MIN percentageCalculation
 
-    | PERCENTAGE MUL SCALAR
-    | SCALAR MUL PERCENTAGE
-    | percentageCalculation MUL SCALAR
-    | SCALAR MUL percentageCalculation
+    | percent MUL scalar
+    | scalar MUL percent
+    | percentageCalculation MUL scalar
+    | scalar MUL percentageCalculation
 
     | variableReference PLUS percentageCalculation
     | percentageCalculation PLUS variableReference
@@ -223,3 +223,7 @@ percentageCalculation:
     | variableReference MIN percentageCalculation
     | percentageCalculation MIN variableReference
     ;
+
+    scalar: SCALAR;
+    pixel: PIXELSIZE;
+    percent: PERCENTAGE;
