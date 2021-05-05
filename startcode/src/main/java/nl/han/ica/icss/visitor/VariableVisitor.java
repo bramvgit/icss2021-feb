@@ -3,6 +3,10 @@ package nl.han.ica.icss.visitor;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
+import nl.han.ica.icss.ast.literals.ScalarLiteral;
+import nl.han.ica.icss.ast.operations.AddOperation;
+import nl.han.ica.icss.ast.operations.MultiplyOperation;
+import nl.han.ica.icss.ast.operations.SubtractOperation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -97,12 +101,20 @@ public class VariableVisitor implements Visitor {
             rhs = variables.get(((VariableReference) rhs).name).expression;
         }
 
-        if (lhs instanceof PixelLiteral) {
-            if (rhs instanceof PercentageLiteral)
-                operation.setError("Calculations with pixels and percentages is not possible.");
-        } else if (lhs instanceof PercentageLiteral) {
-            if (rhs instanceof PixelLiteral)
-                operation.setError("Calculations with pixels and percentages is not possible.");
+        if (operation instanceof AddOperation || operation instanceof SubtractOperation) {
+            if (lhs instanceof PixelLiteral) {
+                if (rhs instanceof PercentageLiteral)
+                    operation.setError("Calculating with pixels and percentages is not possible.");
+            } else if (lhs instanceof PercentageLiteral) {
+                if (rhs instanceof PixelLiteral)
+                    operation.setError("Calculating with pixels and percentages is not possible.");
+            }
+        }
+
+        if (operation instanceof MultiplyOperation) {
+            if (!(lhs instanceof ScalarLiteral) && !(rhs instanceof ScalarLiteral)) {
+                operation.setError("Multiply operations require at least 1 scalar.");
+            }
         }
     }
 
