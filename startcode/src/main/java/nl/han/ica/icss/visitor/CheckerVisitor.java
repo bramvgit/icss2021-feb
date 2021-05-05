@@ -9,14 +9,14 @@ import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.*;
 
-public class VariableVisitor implements Visitor {
+public class CheckerVisitor implements Visitor {
     private final Map<String, ASTNode> variableParents;
     private final Map<Declaration, ASTNode> declarationParents;
     private final Map<Operation, Declaration> operationParents;
     private final Map<String, VariableAssignment> variables;
     private final Map<String, List<ExpressionType>> types;
 
-    public VariableVisitor() {
+    public CheckerVisitor() {
         variableParents = new HashMap<>();
         declarationParents = new HashMap<>();
         operationParents = new HashMap<>();

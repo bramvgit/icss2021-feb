@@ -1,7 +1,7 @@
 package nl.han.ica.icss.checker;
 
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.visitor.VariableVisitor;
+import nl.han.ica.icss.visitor.CheckerVisitor;
 import nl.han.ica.icss.visitor.Visitor;
 
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class Checker {
 
     private void initializeVisitors() {
         visitors = Arrays.asList(
-                new VariableVisitor()
+                new CheckerVisitor()
         );
     }
 }
