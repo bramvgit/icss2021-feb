@@ -190,10 +190,18 @@ pixelCalculation:
 
     | variableReference PLUS pixelCalculation
     | pixelCalculation PLUS variableReference
+    | pixel PLUS variableReference
+    | variableReference PLUS pixel
+
     | variableReference MUL pixelCalculation
     | pixelCalculation MUL variableReference
+    | pixel MUL variableReference
+    | variableReference MUL  pixel
+
     | variableReference MIN pixelCalculation
     | pixelCalculation MIN variableReference
+    | pixel MIN variableReference
+    | variableReference MIN pixel
     ;
 
 /*
@@ -218,10 +226,18 @@ percentageCalculation:
 
     | variableReference PLUS percentageCalculation
     | percentageCalculation PLUS variableReference
+    | variableReference PLUS percent
+    | percent PLUS variableReference
+
     | variableReference MUL percentageCalculation
     | percentageCalculation MUL variableReference
+    | variableReference MUL percent
+    | percent MUL variableReference
+
     | variableReference MIN percentageCalculation
     | percentageCalculation MIN variableReference
+    | variableReference MIN percent
+    | percent MIN variableReference
     ;
 
     scalar: SCALAR;
