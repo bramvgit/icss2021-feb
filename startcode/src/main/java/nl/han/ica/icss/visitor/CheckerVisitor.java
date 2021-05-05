@@ -15,6 +15,7 @@ public class CheckerVisitor implements Visitor {
     private final Map<Operation, Declaration> operationParents;
     private final Map<String, VariableAssignment> variables;
     private final Map<String, List<ExpressionType>> types;
+    private final List<String> passedVariables;
 
     public CheckerVisitor() {
         variableParents = new HashMap<>();
@@ -22,6 +23,7 @@ public class CheckerVisitor implements Visitor {
         operationParents = new HashMap<>();
         variables = new HashMap<>();
         types = new HashMap<>();
+        passedVariables = new ArrayList<>();
 
         initializeTypes();
     }
@@ -57,7 +59,13 @@ public class CheckerVisitor implements Visitor {
 
         if (expression instanceof VariableReference) {
             VariableReference variableReference = (VariableReference) expression;
-            expression = variables.get(variableReference.name).expression;
+            VariableAssignment variableAssignment = variables.get(variableReference.name);
+            if (variableAssignment == null) {
+                expression = null;
+            } else {
+                expression = variableAssignment.expression;
+            }
+
             variableReference.accept(this);
             ASTNode variableParent = variableParents.get(variableReference.name);
             ASTNode declarationParent = declarationParents.get(declaration);
@@ -88,12 +96,15 @@ public class CheckerVisitor implements Visitor {
     }
 
     private void checkVariableReferenceScope(VariableReference variableReference, ASTNode variableParent, ASTNode declarationParent) {
-        if (variableParent == null) {
+        if (passedVariables.contains(variableReference.name)) {
+        } else if (variableParent == null) {
             variableReference.setError(variableReference.name + " is undefined.");
         } else if (!(variableParent instanceof Stylesheet) && !(variableParent.equals(declarationParent))) {
             if (!checkVariableReferenceScope(variableParent, declarationParent)) {
                 variableReference.setError(variableReference.name + " is undefined.");
             }
+        } else {
+            passedVariables.add(variableReference.name);
         }
     }
 
