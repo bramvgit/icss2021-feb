@@ -178,6 +178,26 @@ public class ASTListener extends ICSSBaseListener {
     }
 
     @Override
+    public void exitPercentageCalculation(ICSSParser.PercentageCalculationContext ctx) {
+        Operation operation = (Operation) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(operation));
+    }
+
+    @Override
+    public void enterPercentageCalculation(ICSSParser.PercentageCalculationContext ctx) {
+        Operation operation;
+
+        if (ctx.MUL() != null) {
+            operation = new MultiplyOperation();
+        } else if (ctx.PLUS() != null) {
+            operation = new AddOperation();
+        } else {
+            operation = new SubtractOperation();
+        }
+        currentContainer.push(operation);
+    }
+
+    @Override
     public void exitScalar(ICSSParser.ScalarContext ctx) {
         ScalarLiteral scalarLiteral = (ScalarLiteral) currentContainer.pop();
         currentContainer.push(currentContainer.pop().addChild(scalarLiteral));
@@ -208,6 +228,28 @@ public class ASTListener extends ICSSBaseListener {
     @Override
     public void enterPercent(ICSSParser.PercentContext ctx) {
         currentContainer.push(new PercentageLiteral(ctx.PERCENTAGE().getText()));
+    }
+
+    @Override
+    public void exitIf_clause(ICSSParser.If_clauseContext ctx) {
+        IfClause ifClause = (IfClause) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(ifClause));
+    }
+
+    @Override
+    public void enterIf_clause(ICSSParser.If_clauseContext ctx) {
+        currentContainer.push(new IfClause());
+    }
+
+    @Override
+    public void exitElse_clause(ICSSParser.Else_clauseContext ctx) {
+        ElseClause elseClause = (ElseClause) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(elseClause));
+    }
+
+    @Override
+    public void enterElse_clause(ICSSParser.Else_clauseContext ctx) {
+        currentContainer.push(new ElseClause());
     }
 
     public AST getAST() {
