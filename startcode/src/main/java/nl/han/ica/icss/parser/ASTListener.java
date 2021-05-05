@@ -4,10 +4,10 @@ package nl.han.ica.icss.parser;
 import nl.han.ica.datastructures.HANStack;
 import nl.han.ica.datastructures.IHANStack;
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.literals.BoolLiteral;
-import nl.han.ica.icss.ast.literals.ColorLiteral;
-import nl.han.ica.icss.ast.literals.PercentageLiteral;
-import nl.han.ica.icss.ast.literals.PixelLiteral;
+import nl.han.ica.icss.ast.literals.*;
+import nl.han.ica.icss.ast.operations.AddOperation;
+import nl.han.ica.icss.ast.operations.MultiplyOperation;
+import nl.han.ica.icss.ast.operations.SubtractOperation;
 import nl.han.ica.icss.ast.selectors.ClassSelector;
 import nl.han.ica.icss.ast.selectors.IdSelector;
 import nl.han.ica.icss.ast.selectors.TagSelector;
@@ -155,6 +155,59 @@ public class ASTListener extends ICSSBaseListener {
     @Override
     public void enterVariableReference(ICSSParser.VariableReferenceContext ctx) {
         currentContainer.push(new VariableReference(ctx.CAPITAL_IDENT().getText()));
+    }
+
+    @Override
+    public void exitPixelCalculation(ICSSParser.PixelCalculationContext ctx) {
+        Operation operation = (Operation) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(operation));
+    }
+
+    @Override
+    public void enterPixelCalculation(ICSSParser.PixelCalculationContext ctx) {
+        Operation operation;
+
+        if (ctx.MUL() != null) {
+            operation = new MultiplyOperation();
+        } else if (ctx.PLUS() != null) {
+            operation = new AddOperation();
+        } else {
+            operation = new SubtractOperation();
+        }
+        currentContainer.push(operation);
+    }
+
+    @Override
+    public void exitScalar(ICSSParser.ScalarContext ctx) {
+        ScalarLiteral scalarLiteral = (ScalarLiteral) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(scalarLiteral));
+    }
+
+    @Override
+    public void enterScalar(ICSSParser.ScalarContext ctx) {
+        currentContainer.push(new ScalarLiteral(ctx.SCALAR().getText()));
+    }
+
+    @Override
+    public void exitPixel(ICSSParser.PixelContext ctx) {
+        PixelLiteral pixelLiteral = (PixelLiteral) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(pixelLiteral));
+    }
+
+    @Override
+    public void enterPixel(ICSSParser.PixelContext ctx) {
+        currentContainer.push(new PixelLiteral(ctx.PIXELSIZE().getText()));
+    }
+
+    @Override
+    public void exitPercent(ICSSParser.PercentContext ctx) {
+        PercentageLiteral percentageLiteral = (PercentageLiteral) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(percentageLiteral));
+    }
+
+    @Override
+    public void enterPercent(ICSSParser.PercentContext ctx) {
+        currentContainer.push(new PercentageLiteral(ctx.PERCENTAGE().getText()));
     }
 
     public AST getAST() {
