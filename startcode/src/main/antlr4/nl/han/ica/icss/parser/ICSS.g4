@@ -187,6 +187,13 @@ pixelCalculation:
     | SCALAR MUL PIXELSIZE
     | pixelCalculation MUL SCALAR
     | SCALAR MUL pixelCalculation
+
+    | variableReference PLUS pixelCalculation
+    | pixelCalculation PLUS variableReference
+    | variableReference MUL pixelCalculation
+    | pixelCalculation MUL variableReference
+    | variableReference MIN pixelCalculation
+    | pixelCalculation MIN variableReference
     ;
 
 /*
@@ -208,4 +215,11 @@ percentageCalculation:
     | SCALAR MUL PERCENTAGE
     | percentageCalculation MUL SCALAR
     | SCALAR MUL percentageCalculation
+
+    | variableReference PLUS percentageCalculation
+    | percentageCalculation PLUS variableReference
+    | variableReference MUL percentageCalculation
+    | percentageCalculation MUL variableReference
+    | variableReference MIN percentageCalculation
+    | percentageCalculation MIN variableReference
     ;
