@@ -23,10 +23,10 @@ import java.util.Map;
 public class ASTListener extends ICSSBaseListener {
 
     //Accumulator attributes:
-    private AST ast;
+    private final AST ast;
 
     //Use this to keep track of the parent nodes when recursively traversing the ast
-    private IHANStack<ASTNode> currentContainer;
+    private final IHANStack<ASTNode> currentContainer;
 
     // Use to keep track of key values for variables
     Map<String, VariableReference> variables;
