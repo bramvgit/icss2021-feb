@@ -1,10 +1,7 @@
 package nl.han.ica.icss.visitor;
 
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.literals.ColorLiteral;
-import nl.han.ica.icss.ast.literals.PercentageLiteral;
-import nl.han.ica.icss.ast.literals.PixelLiteral;
-import nl.han.ica.icss.ast.literals.ScalarLiteral;
+import nl.han.ica.icss.ast.literals.*;
 import nl.han.ica.icss.ast.operations.AddOperation;
 import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
@@ -198,6 +195,7 @@ public class VariableVisitor implements Visitor {
     @Override
     public void visit(IfClause ifClause) {
         ElseClause elseClause = ifClause.elseClause;
+        checkIfClauseUsedBooleanCondition(ifClause);
 
         for (ASTNode node : ifClause.body) {
             if (node instanceof VariableAssignment) {
@@ -224,6 +222,23 @@ public class VariableVisitor implements Visitor {
                     declarationParents.put((Declaration) node, elseClause);
                     ((Declaration) node).accept(this);
                 }
+            }
+        }
+    }
+
+    private void checkIfClauseUsedBooleanCondition(IfClause ifClause) {
+        Expression expression = ifClause.conditionalExpression;
+        if (expression instanceof VariableReference) {
+            VariableAssignment variableAssignment = variables.get(((VariableReference) expression).name);
+            if (variableAssignment == null) {
+                expression = null;
+            } else {
+                expression = variableAssignment.expression;
+            }
+        }
+        if (expression != null) {
+            if (!(expression instanceof BoolLiteral)) {
+                ifClause.setError("If clauses must use a boolean value as conditional expression.");
             }
         }
     }
