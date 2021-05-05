@@ -1,6 +1,7 @@
 package nl.han.ica.icss.visitor;
 
 import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.literals.ColorLiteral;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
 import nl.han.ica.icss.ast.literals.ScalarLiteral;
@@ -75,12 +76,36 @@ public class VariableVisitor implements Visitor {
     @Override
     public void visit(Operation operation) {
         checkOperandsTypesAreEqual(operation);
+        checkColorsAreNotUsed(operation);
 
         Expression lhs = operation.lhs;
         checkOperationForUndefinedVariables(operation, lhs);
 
         Expression rhs = operation.rhs;
         checkOperationForUndefinedVariables(operation, rhs);
+    }
+
+    private void checkColorsAreNotUsed(Operation operation) {
+        Expression lhs = operation.lhs;
+        if (lhs instanceof Operation) {
+            checkOperandsTypesAreEqual((Operation) lhs);
+        }
+
+        Expression rhs = operation.rhs;
+        if (rhs instanceof Operation) {
+            checkOperandsTypesAreEqual((Operation) rhs);
+        }
+
+        if (lhs instanceof VariableReference) {
+            lhs = variables.get(((VariableReference) lhs).name).expression;
+        }
+        if (rhs instanceof VariableReference) {
+            rhs = variables.get(((VariableReference) rhs).name).expression;
+        }
+
+        if (lhs instanceof ColorLiteral || rhs instanceof ColorLiteral) {
+            operation.setError("Colors cannot be used in calculations.");
+        }
     }
 
     private void checkOperandsTypesAreEqual(Operation operation) {
