@@ -8,8 +8,11 @@ import nl.han.ica.icss.ast.literals.ScalarLiteral;
 import nl.han.ica.icss.ast.operations.AddOperation;
 import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
+import nl.han.ica.icss.ast.types.ExpressionType;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class VariableVisitor implements Visitor {
@@ -17,12 +20,31 @@ public class VariableVisitor implements Visitor {
     private final Map<Declaration, ASTNode> declarationParents;
     private final Map<Operation, Declaration> operationParents;
     private final Map<String, VariableAssignment> variables;
+    private final Map<String, List<ExpressionType>> types;
 
     public VariableVisitor() {
         variableParents = new HashMap<>();
         declarationParents = new HashMap<>();
         operationParents = new HashMap<>();
         variables = new HashMap<>();
+        types = new HashMap<>();
+
+        initializeTypes();
+    }
+
+    private void initializeTypes() {
+        List<ExpressionType> colors = Arrays.asList(
+                ExpressionType.COLOR
+        );
+        List<ExpressionType> width = Arrays.asList(
+                ExpressionType.PERCENTAGE,
+                ExpressionType.PIXEL,
+                ExpressionType.SCALAR
+        );
+        types.put("color", colors);
+        types.put("background-color", colors);
+        types.put("width", width);
+        types.put("height", width);
     }
 
     @Override
@@ -41,6 +63,7 @@ public class VariableVisitor implements Visitor {
 
         if (expression instanceof VariableReference) {
             VariableReference variableReference = (VariableReference) expression;
+            expression = variables.get(variableReference.name).expression;
             variableReference.accept(this);
             ASTNode variableParent = variableParents.get(variableReference.name);
             ASTNode declarationParent = declarationParents.get(declaration);
@@ -50,6 +73,21 @@ public class VariableVisitor implements Visitor {
             Operation operation = (Operation) expression;
             operationParents.put(operation, declaration);
             operation.accept(this);
+        }
+        if (expression != null) {
+            List<ExpressionType> expressionType = types.get(declaration.property.name);
+
+            if (expressionType != null) {
+                if (expression instanceof PixelLiteral && !expressionType.contains(ExpressionType.PIXEL)) {
+                    declaration.setError("Property " + declaration.property.name + " does not accept pixels as value.");
+                } else if (expression instanceof PercentageLiteral && !expressionType.contains(ExpressionType.PIXEL)) {
+                    declaration.setError("Property " + declaration.property.name + " does not accept percentages as value.");
+                } else if (expression instanceof ScalarLiteral && !expressionType.contains(ExpressionType.SCALAR)) {
+                    declaration.setError("Property " + declaration.property.name + " does not accept scalars as value.");
+                } else if (expression instanceof ColorLiteral && !expressionType.contains(ExpressionType.COLOR)) {
+                    declaration.setError("Property " + declaration.property.name + " does not accept colors as value.");
+                }
+            }
         }
     }
 
