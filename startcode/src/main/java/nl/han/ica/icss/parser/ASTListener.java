@@ -4,6 +4,7 @@ package nl.han.ica.icss.parser;
 import nl.han.ica.datastructures.HANStack;
 import nl.han.ica.datastructures.IHANStack;
 import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.ast.literals.ColorLiteral;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
@@ -109,6 +110,51 @@ public class ASTListener extends ICSSBaseListener {
             literal = new ColorLiteral(ctx.getText());
         }
         currentContainer.push(literal);
+    }
+
+    @Override
+    public void exitVariableAssignment(ICSSParser.VariableAssignmentContext ctx) {
+        VariableAssignment variableAssignment = (VariableAssignment) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(variableAssignment));
+    }
+
+    @Override
+    public void enterVariableAssignment(ICSSParser.VariableAssignmentContext ctx) {
+        VariableReference variableReference = new VariableReference(ctx.CAPITAL_IDENT().getText());
+        VariableAssignment variableAssignment = new VariableAssignment();
+        variableAssignment.name = variableReference;
+        variableReference.name = ctx.CAPITAL_IDENT().getText();
+
+        currentContainer.push(variableAssignment);
+    }
+
+    @Override
+    public void exitVariableValue(ICSSParser.VariableValueContext ctx) {
+        if (currentContainer.peek() instanceof Literal) {
+            Literal literal = (Literal) currentContainer.pop();
+            currentContainer.push(currentContainer.pop().addChild(literal));
+        }
+    }
+
+    @Override
+    public void enterVariableValue(ICSSParser.VariableValueContext ctx) {
+        Literal literal = null;
+
+        if (ctx.FALSE() != null || ctx.TRUE() != null) {
+            literal = new BoolLiteral(ctx.getText());
+        }
+        if (literal != null) currentContainer.push(literal);
+    }
+
+    @Override
+    public void exitVariableReference(ICSSParser.VariableReferenceContext ctx) {
+        VariableReference variableReference = (VariableReference) currentContainer.pop();
+        currentContainer.push(currentContainer.pop().addChild(variableReference));
+    }
+
+    @Override
+    public void enterVariableReference(ICSSParser.VariableReferenceContext ctx) {
+        currentContainer.push(new VariableReference(ctx.CAPITAL_IDENT().getText()));
     }
 
     public AST getAST() {
