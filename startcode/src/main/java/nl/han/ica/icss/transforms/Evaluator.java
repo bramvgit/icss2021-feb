@@ -52,8 +52,9 @@ public class Evaluator implements Transform {
     private void transformDeclaration(Declaration declaration) {
         if (declaration.expression instanceof VariableReference) {
             declaration.expression = variables.get(((VariableReference) declaration.expression).name);
-        } else {
+        } else if (declaration.expression instanceof Operation) {
             traverse(declaration.expression);
+            declaration.expression = calculate((Operation) declaration.expression);
         }
     }
 
@@ -90,14 +91,12 @@ public class Evaluator implements Transform {
     }
 
     private void transformVariableAssignment(VariableAssignment variableAssignment) {
-        for (ASTNode node : variableAssignment.getChildren()) {
-            if (!(node instanceof VariableReference)) {
-                traverse(node);
-            }
+        if (variableAssignment.expression instanceof Operation) {
+            traverse(variableAssignment.expression);
+            variables.put(variableAssignment.name.name, calculate((Operation) variableAssignment.expression));
+        } else {
+            variables.put(variableAssignment.name.name, getLiteral(variableAssignment.expression));
         }
-
-        // TODO: literal throws error when in operation
-        variables.put(variableAssignment.name.name, getLiteral(variableAssignment.expression));
         removedNodes.add(variableAssignment);
     }
 
@@ -108,15 +107,13 @@ public class Evaluator implements Transform {
         if (operation.rhs instanceof VariableReference) {
             operation.rhs = variables.get(((VariableReference) operation.rhs).name);
         }
-
-        // TODO: check if this should be separated
         if (operation.lhs instanceof Operation || operation.rhs instanceof Operation) traverse(operation.getChildren());
-
-        // TODO: keep track of calculated literal result and in the end add it to a hashmap with key operation value result
-        System.out.println(calculate(operation));
     }
 
     private Literal calculate(Operation operation) {
+        if (operation.lhs instanceof Operation) operation.lhs = calculate((Operation) operation.lhs);
+        if (operation.rhs instanceof Operation) operation.rhs = calculate((Operation) operation.rhs);
+
         if (operation.lhs instanceof PixelLiteral || operation.rhs instanceof PixelLiteral) {
             return calculatePixels(operation, (Literal) operation.lhs, (Literal) operation.rhs);
         }
@@ -145,7 +142,6 @@ public class Evaluator implements Transform {
             return new PixelLiteral(n1 * n2);
         }
     }
-
 
     private Literal getLiteral(Expression expression) {
         Literal literal;
