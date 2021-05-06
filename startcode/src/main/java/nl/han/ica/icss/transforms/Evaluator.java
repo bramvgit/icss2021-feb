@@ -48,12 +48,10 @@ public class Evaluator implements Transform {
     }
 
     private void transformDeclaration(Declaration declaration) {
-        for (ASTNode node : declaration.getChildren()) {
-            if (node instanceof VariableReference) {
-                // TODO: replace with literal
-            } else {
-                traverse(node);
-            }
+        if (declaration.expression instanceof VariableReference) {
+            declaration.expression = variables.get(((VariableReference) declaration.expression).name);
+        } else {
+            traverse(declaration.expression);
         }
     }
 
