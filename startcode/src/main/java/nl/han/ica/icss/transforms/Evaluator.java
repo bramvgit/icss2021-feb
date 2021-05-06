@@ -63,7 +63,7 @@ public class Evaluator implements Transform {
     private void transformIfClause(IfClause ifClause) {
         for (ASTNode node : ifClause.getChildren()) {
             if (node instanceof VariableReference) {
-                // TODO: replace with literal
+                ifClause.conditionalExpression = variables.get(((VariableReference) node).name);
             } else {
                 traverse(node);
             }
