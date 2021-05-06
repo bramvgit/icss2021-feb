@@ -2,6 +2,8 @@ package nl.han.ica.icss.transforms;
 
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.*;
+import nl.han.ica.icss.ast.operations.AddOperation;
+import nl.han.ica.icss.ast.operations.SubtractOperation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -100,14 +102,50 @@ public class Evaluator implements Transform {
     }
 
     private void transformOperation(Operation operation) {
-        for (ASTNode node : operation.getChildren()) {
-            if (node instanceof VariableReference) {
-                // TODO: replace with literal
-            } else {
-                traverse(node);
-            }
+        if (operation.lhs instanceof VariableReference) {
+            operation.lhs = variables.get(((VariableReference) operation.lhs).name);
+        }
+        if (operation.rhs instanceof VariableReference) {
+            operation.rhs = variables.get(((VariableReference) operation.rhs).name);
+        }
+
+        // TODO: check if this should be separated
+        if (operation.lhs instanceof Operation || operation.rhs instanceof Operation) traverse(operation.getChildren());
+
+        // TODO: keep track of calculated literal result and in the end add it to a hashmap with key operation value result
+        System.out.println(calculate(operation));
+    }
+
+    private Literal calculate(Operation operation) {
+        if (operation.lhs instanceof PixelLiteral || operation.rhs instanceof PixelLiteral) {
+            return calculatePixels(operation, (Literal) operation.lhs, (Literal) operation.rhs);
+        }
+        return null;
+    }
+
+    private Literal calculatePixels(Operation operation, Literal lhs, Literal rhs) {
+        int n1, n2;
+        if (lhs instanceof PixelLiteral) {
+            n1 = ((PixelLiteral) lhs).value;
+        } else {
+            n1 = ((ScalarLiteral) lhs).value;
+        }
+
+        if (rhs instanceof PixelLiteral) {
+            n2 = ((PixelLiteral) rhs).value;
+        } else {
+            n2 = ((ScalarLiteral) rhs).value;
+        }
+
+        if (operation instanceof AddOperation) {
+            return new PixelLiteral(n1 + n2);
+        } else if (operation instanceof SubtractOperation) {
+            return new PixelLiteral(n1 - n2);
+        } else {
+            return new PixelLiteral(n1 * n2);
         }
     }
+
 
     private Literal getLiteral(Expression expression) {
         Literal literal;
