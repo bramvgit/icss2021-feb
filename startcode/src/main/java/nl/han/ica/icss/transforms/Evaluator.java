@@ -116,8 +116,33 @@ public class Evaluator implements Transform {
 
         if (operation.lhs instanceof PixelLiteral || operation.rhs instanceof PixelLiteral) {
             return calculatePixels(operation, (Literal) operation.lhs, (Literal) operation.rhs);
+        } else if (operation.lhs instanceof PercentageLiteral || operation.rhs instanceof PercentageLiteral) {
+            return calculatePercentages(operation, (Literal) operation.lhs, (Literal) operation.rhs);
         }
         return null;
+    }
+
+    private Literal calculatePercentages(Operation operation, Literal lhs, Literal rhs) {
+        int n1, n2;
+        if (lhs instanceof PercentageLiteral) {
+            n1 = ((PercentageLiteral) lhs).value;
+        } else {
+            n1 = ((ScalarLiteral) lhs).value;
+        }
+
+        if (rhs instanceof PercentageLiteral) {
+            n2 = ((PercentageLiteral) rhs).value;
+        } else {
+            n2 = ((ScalarLiteral) rhs).value;
+        }
+
+        if (operation instanceof AddOperation) {
+            return new PercentageLiteral(n1 + n2);
+        } else if (operation instanceof SubtractOperation) {
+            return new PercentageLiteral(n1 - n2);
+        } else {
+            return new PercentageLiteral(n1 * n2);
+        }
     }
 
     private Literal calculatePixels(Operation operation, Literal lhs, Literal rhs) {
