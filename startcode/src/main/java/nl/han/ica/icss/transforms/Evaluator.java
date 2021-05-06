@@ -137,11 +137,11 @@ public class Evaluator implements Transform {
         }
 
         if (operation instanceof AddOperation) {
-            return new PercentageLiteral(n1 + n2);
+            return new PercentageLiteral(Math.addExact(n1, n2));
         } else if (operation instanceof SubtractOperation) {
-            return new PercentageLiteral(n1 - n2);
+            return new PercentageLiteral(Math.subtractExact(n1, n2));
         } else {
-            return new PercentageLiteral(n1 * n2);
+            return new PercentageLiteral(Math.multiplyExact(n1, n2));
         }
     }
 
@@ -160,11 +160,11 @@ public class Evaluator implements Transform {
         }
 
         if (operation instanceof AddOperation) {
-            return new PixelLiteral(n1 + n2);
+            return new PixelLiteral(Math.addExact(n1, n2));
         } else if (operation instanceof SubtractOperation) {
-            return new PixelLiteral(n1 - n2);
+            return new PixelLiteral(Math.subtractExact(n1, n2));
         } else {
-            return new PixelLiteral(n1 * n2);
+            return new PixelLiteral(Math.multiplyExact(n1, n2));
         }
     }
 
