@@ -5,10 +5,7 @@ import nl.han.ica.icss.ast.literals.*;
 import nl.han.ica.icss.ast.operations.AddOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Evaluator implements Transform {
 
@@ -82,12 +79,30 @@ public class Evaluator implements Transform {
     }
 
     private void transformStylerule(Stylerule stylerule) {
-//        ArrayList<ASTNode> nodesToKeep = new ArrayList<>();
+        ArrayList<ASTNode> body = new ArrayList<>();
         traverse(stylerule.getChildren());
-//        for (ASTNode node : stylerule.getChildren()) {
-//            if (!removedNodes.contains(node)) nodesToKeep.add(node);
-//        }
-//        stylerule.body = nodesToKeep;
+
+        for (ASTNode node : stylerule.getChildren()) {
+            if (node instanceof Declaration) body.add(node);
+            if (node instanceof IfClause) body.addAll(getIfClauseBody((IfClause) node));
+        }
+        stylerule.body = body;
+    }
+
+    private Collection<? extends ASTNode> getIfClauseBody(IfClause ifClause) {
+        List<ASTNode> body = new ArrayList<>();
+        if (!((BoolLiteral) ifClause.conditionalExpression).value) {
+            return Objects.requireNonNullElse(ifClause.elseClause.body, body);
+        }
+
+        for (ASTNode node : ifClause.body) {
+            if (node instanceof IfClause) {
+                body.addAll(getIfClauseBody((IfClause) node));
+            } else {
+                body.add(node);
+            }
+        }
+        return body;
     }
 
     private void transformVariableAssignment(VariableAssignment variableAssignment) {
