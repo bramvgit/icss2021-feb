@@ -61,14 +61,13 @@ public class Evaluator implements Transform {
     }
 
     private void transformIfClause(IfClause ifClause) {
-        for (ASTNode node : ifClause.getChildren()) {
-            if (node instanceof VariableReference) {
-                ifClause.conditionalExpression = variables.get(((VariableReference) node).name);
-            } else {
-                traverse(node);
-            }
+        ifClause.conditionalExpression = variables.get(((VariableReference) ifClause.conditionalExpression).name);
+
+        if (((BoolLiteral) ifClause.conditionalExpression).value) {
+            traverse(ifClause.body);
+        } else if (ifClause.elseClause != null) {
+            traverse(ifClause.elseClause.body);
         }
-        removedNodes.add(ifClause);
     }
 
     private void transformStyleSheet(Stylesheet stylesheet) {
@@ -92,7 +91,8 @@ public class Evaluator implements Transform {
     private Collection<? extends ASTNode> getIfClauseBody(IfClause ifClause) {
         List<ASTNode> body = new ArrayList<>();
         if (!((BoolLiteral) ifClause.conditionalExpression).value) {
-            return Objects.requireNonNullElse(ifClause.elseClause.body, body);
+            if (ifClause.elseClause != null) return ifClause.elseClause.body;
+            return body;
         }
 
         for (ASTNode node : ifClause.body) {
