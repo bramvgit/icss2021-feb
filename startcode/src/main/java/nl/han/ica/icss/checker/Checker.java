@@ -1,8 +1,8 @@
 package nl.han.ica.icss.checker;
 
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.visitor.CheckerVisitor;
-import nl.han.ica.icss.visitor.Visitor;
+import nl.han.ica.icss.checker.visitor.CheckerVisitor;
+import nl.han.ica.icss.checker.visitor.Visitor;
 
 import java.util.ArrayList;
 import java.util.Arrays;

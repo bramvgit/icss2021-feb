@@ -1,4 +1,4 @@
-package nl.han.ica.icss.visitor;
+package nl.han.ica.icss.checker.visitor;
 
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.*;
