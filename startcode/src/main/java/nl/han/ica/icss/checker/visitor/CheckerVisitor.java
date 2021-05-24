@@ -45,7 +45,9 @@ public class CheckerVisitor implements Visitor {
 
     @Override
     public void visit(VariableAssignment variableAssignment) {
-
+        if (variableAssignment.expression instanceof Operation) {
+            ((Operation) variableAssignment.expression).accept(this);
+        }
     }
 
     @Override
@@ -259,6 +261,7 @@ public class CheckerVisitor implements Visitor {
         for (ASTNode node : stylerule.body) {
             if (node instanceof VariableAssignment) {
                 VariableAssignment variableAssignment = (VariableAssignment) node;
+                ((VariableAssignment) node).accept(this);
 
                 variables.put(variableAssignment.name.name, variableAssignment);
                 variableParents.put(variableAssignment.name.name, stylerule);

@@ -109,6 +109,8 @@ public class Evaluator implements Transform {
         if (variableAssignment.expression instanceof Operation) {
             traverse(variableAssignment.expression);
             variables.put(variableAssignment.name.name, calculate((Operation) variableAssignment.expression));
+        } else if (variableAssignment.expression instanceof VariableReference) {
+            variables.put(variableAssignment.name.name, variables.get(((VariableReference) variableAssignment.expression).name));
         } else {
             variables.put(variableAssignment.name.name, getLiteral(variableAssignment.expression));
         }

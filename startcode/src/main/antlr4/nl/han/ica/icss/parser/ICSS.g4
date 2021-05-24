@@ -128,7 +128,7 @@ variableValue
     Variables can be initialized with calculations
     Value := 10px + 1px * 1;
 */
-variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR variableValue SEMICOLON;
+variableAssignment: CAPITAL_IDENT ASSIGNMENT_OPERATOR (variableValue | variableReference) SEMICOLON;
 
 /*
     Declarations like

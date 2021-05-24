@@ -28,6 +28,8 @@ public class Checker {
                         ((IfClause) rule).accept(visitors);
                     }
                 }
+            } else if (node instanceof VariableAssignment) {
+                ((VariableAssignment) node).accept(visitors);
             }
         }
     }
